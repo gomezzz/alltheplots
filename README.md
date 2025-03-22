@@ -1,4 +1,3 @@
-
 ## alltheplots - Quick & Automatic Plots for All Array Dimensionalities
 
 ![GitHub](https://img.shields.io/github/license/gomezzz/alltheplots?style=flat-square)
@@ -25,6 +24,7 @@
         <li><a href="#basic-usage">Basic Usage</a></li>
         <li><a href="#saving-plot-to-file">Saving Plot to File</a></li>
         <li><a href="#custom-theme">Using a Custom Theme</a></li>
+        <li><a href="#framework-compatibility">Framework Compatibility</a></li>
     </ul>
     <li><a href="#dependencies">Dependencies</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -41,7 +41,7 @@ The core goal of `alltheplots` is to abstract away the plotting details, letting
 
 - **Simple**: Single public `.plot()` function.
 - **Automatic**: Detects array dimensionality and chooses appropriate plots automatically.
-- **Flexible**: Supports numpy-like arrays from libraries such as `numpy`, `pytorch`, `TensorFlow`, and `jax` seamlessly.
+- **Flexible**: Supports numpy-like arrays from libraries such as `numpy`, `pytorch`, `TensorFlow`, `jax`, and `cupy` seamlessly.
 - **Minimal dependencies**: built on top of `seaborn`, `matplotlib`, `numpy`, and `loguru`.
 
 ## Installation
@@ -99,7 +99,8 @@ Available themes include: `darkgrid`, `whitegrid`, `dark`, `white`, and `ticks`.
 - `seaborn`
 - `matplotlib`
 - `loguru`
-- `numpy` (internal)
+- `numpy`
+- `scipy`
 
 ## Contributing
 

@@ -2,11 +2,19 @@ name: atp
 channels:
   - conda-forge
 dependencies:
+  - python=3.11
   - black=24.8.0
   - flake8
   - loguru
   - ipykernel
-  - python=3.11
   - pytest
   - pytest-cov
   - seaborn
+  - numpy
+  - scipy
+  - pytorch
+  - pip
+  - pip:
+    - tensorflow
+    - jax
+    - jaxlib
