@@ -9,6 +9,7 @@ dependencies:
   - ipykernel
   - pytest
   - pytest-cov
+  - pytest-dependency
   - seaborn
   - numpy
   - scipy

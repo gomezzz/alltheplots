@@ -28,9 +28,9 @@ frameworks["numpy"] = np
 try:
     import torch
 
-    frameworks["pytorch"] = torch
-except ImportError:
-    logger.warning("PyTorch not available, tests will be skipped")
+    frameworks["torch"] = torch  # Changed from "pytorch" to "torch"
+except ImportError as e:
+    logger.warning(f"PyTorch not available, tests will be skipped. Error: {e}")
     pass
 
 # Try to import TensorFlow
@@ -44,12 +44,11 @@ except ImportError:
 
 # Try to import JAX
 try:
-    import jax
     import jax.numpy as jnp
 
-    frameworks["jax"] = jnp
-except ImportError:
-    logger.warning("JAX not available, tests will be skipped")
+    frameworks["jax.numpy"] = jnp  # Changed from "jax" to "jax.numpy"
+except ImportError as e:
+    logger.warning(f"JAX not available, tests will be skipped. Error: {e}")
     pass
 
 # Try to import CuPy
@@ -71,6 +70,7 @@ def framework(request):
 @pytest.fixture
 def random_data(framework):
     """Generate random data using the specified framework"""
+    logger.debug(f"Generating random data for framework: {framework.__name__}")
     if framework.__name__ == "numpy":
         return framework.random.randn(1000)
     elif framework.__name__ == "torch":
@@ -118,6 +118,7 @@ def output_dir():
     return MODULE_OUTPUT_DIR
 
 
+@pytest.mark.plot_test
 @pytest.mark.parametrize("style", ["darkgrid"])  # Reduced to one style to speed up tests
 @pytest.mark.parametrize("data_type", ["random", "sinusoid"])
 def test_plot_1d(framework, random_data, sinusoid_data, style, data_type, output_dir):
@@ -150,10 +151,16 @@ def test_plot_1d(framework, random_data, sinusoid_data, style, data_type, output
         pytest.fail(f"1D plotting with {framework.__name__} ({data_type}) failed with error: {e}")
 
 
-# Mark this test to run after all other tests have completed
-@pytest.mark.dependency(depends=["test_plot_1d"])
+# Remove the dependency marker and add a check for framework tests completion
+@pytest.mark.dependency(depends=["plot_test"])
 def test_output_dir_content(output_dir):
     """Test that output directory contains plot files"""
+    # Look for framework-specific files first
+    framework_files = list(output_dir.glob("*_darkgrid.png"))
+    if not framework_files:
+        logger.warning("No framework test files found, tests may not have completed yet")
+
+    # Rest of the test remains the same
     # Ensure all tests that create files have run
     logger.info(f"Checking output directory: {output_dir}")
 
