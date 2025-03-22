@@ -3,9 +3,11 @@ import numpy as np
 from alltheplots import plot
 from pathlib import Path
 
+
 @pytest.fixture
 def tensor_1d():
     return np.random.randn(1000)
+
 
 @pytest.mark.parametrize("filename", [None, "test_plot.png"])
 @pytest.mark.parametrize("style", ["darkgrid", "whitegrid"])
