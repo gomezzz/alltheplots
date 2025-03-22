@@ -6,7 +6,7 @@
 ![GitHub issues](https://img.shields.io/github/issues/gomezzz/alltheplots?style=flat-square)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/gomezzz/alltheplots?style=flat-square)
 
-![Alt Text](resources/images/demo_placeholder.gif)
+![Alt Text](resources/demo.gif)
 
 <p align="left">
     <a href="https://github.com/gomezzz/alltheplots/issues">Report Bug</a>
