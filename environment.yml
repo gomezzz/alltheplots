@@ -1,0 +1,12 @@
+name: atp
+channels:
+  - conda-forge
+dependencies:
+  - black=24.8.0
+  - flake8
+  - loguru
+  - ipykernel
+  - python=3.11
+  - pytest
+  - pytest-cov
+  - seaborn
