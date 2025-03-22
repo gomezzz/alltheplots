@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 
 test_notebook.ipynb
+plot_outputs
