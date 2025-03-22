@@ -118,6 +118,7 @@ def output_dir():
     return MODULE_OUTPUT_DIR
 
 
+@pytest.mark.dependency(name="plot_tests")
 @pytest.mark.plot_test
 @pytest.mark.parametrize("style", ["darkgrid"])  # Reduced to one style to speed up tests
 @pytest.mark.parametrize("data_type", ["random", "sinusoid"])
@@ -151,8 +152,7 @@ def test_plot_1d(framework, random_data, sinusoid_data, style, data_type, output
         pytest.fail(f"1D plotting with {framework.__name__} ({data_type}) failed with error: {e}")
 
 
-# Remove the dependency marker and add a check for framework tests completion
-@pytest.mark.dependency(depends=["plot_test"])
+@pytest.mark.dependency(depends=["plot_tests"])
 def test_output_dir_content(output_dir):
     """Test that output directory contains plot files"""
     # Look for framework-specific files first
