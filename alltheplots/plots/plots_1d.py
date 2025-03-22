@@ -1,16 +1,19 @@
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from scipy import fft
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 
+# Import functions from the individual plot modules
+from .one_dim.line_plot import create_line_plot
+from .one_dim.fft_plot import create_fft_plot
+from .one_dim.hist_kde_plot import create_hist_kde_plot
 
-def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True):
+
+def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True, remove_dc=True):
     """
     Generate a comprehensive visualization of a 1D tensor with four plots:
-    1. Time-domain line plot
-    2. Frequency-domain (FFT magnitude) plot
+    1. Time-domain line plot (or scatter plot for high-frequency data)
+    2. Frequency-domain (FFT magnitude) plot (with optional DC component removal)
     3. Histogram with KDE overlay (normal scale)
     4. Histogram with KDE overlay (logarithmic scale)
 
@@ -21,6 +24,7 @@ def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True):
         style (str): The style of the plot. Default is "darkgrid".
         show (bool): Whether to display the plot interactively (True) or just return the figure (False).
                    Default is True except in test environments.
+        remove_dc (bool): Whether to remove the DC component from the FFT plot. Default is True.
 
     Returns:
         matplotlib.figure.Figure: The figure containing the plots, or None if displayed
@@ -44,76 +48,17 @@ def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True):
     logger.debug("Created 2x2 subplot grid")
     fig.suptitle("1D Tensor Analysis", fontsize=16)
 
-    # 1. Time-domain line plot (top-left)
-    logger.debug("Creating time-domain line plot")
-    axs[0, 0].plot(tensor_np, linewidth=1)
-    axs[0, 0].set_title("Time Domain")
-    axs[0, 0].set_xlabel("Index")
-    axs[0, 0].set_ylabel("Value")
+    # 1. Time-domain line/scatter plot (top-left)
+    create_line_plot(tensor_np, ax=axs[0, 0])
 
     # 2. Frequency-domain FFT plot (top-right)
-    logger.debug("Creating FFT magnitude plot")
-    # Compute FFT and frequency axis
-    N = len(tensor_np)
-    try:
-        fft_values = fft.fft(tensor_np)
-        fft_magnitudes = np.abs(fft_values[: N // 2]) / N  # Only take half (positive frequencies)
-        freq = fft.fftfreq(N)[: N // 2]
-
-        axs[0, 1].plot(freq, fft_magnitudes, linewidth=1)
-        axs[0, 1].set_title("Frequency Domain (FFT Magnitude)")
-        axs[0, 1].set_xlabel("Frequency")
-        axs[0, 1].set_ylabel("Magnitude")
-    except Exception as e:
-        logger.error(f"Failed to compute or plot FFT: {e}")
-        axs[0, 1].text(
-            0.5,
-            0.5,
-            f"FFT Error: {str(e)}",
-            ha="center",
-            va="center",
-            transform=axs[0, 1].transAxes,
-        )
-        axs[0, 1].set_title("Frequency Domain (Error)")
+    create_fft_plot(tensor_np, ax=axs[0, 1], remove_dc=remove_dc)
 
     # 3. Histogram with KDE overlay (normal scale) (bottom-left)
-    logger.debug("Creating histogram with KDE")
-    try:
-        sns.histplot(tensor_np, kde=True, ax=axs[1, 0])
-        axs[1, 0].set_title("Histogram with KDE")
-        axs[1, 0].set_xlabel("Value")
-        axs[1, 0].set_ylabel("Count")
-    except Exception as e:
-        logger.error(f"Failed to create histogram: {e}")
-        axs[1, 0].text(
-            0.5,
-            0.5,
-            f"Histogram Error: {str(e)}",
-            ha="center",
-            va="center",
-            transform=axs[1, 0].transAxes,
-        )
-        axs[1, 0].set_title("Histogram (Error)")
+    create_hist_kde_plot(tensor_np, ax=axs[1, 0], log_scale=False)
 
     # 4. Histogram with KDE overlay (logarithmic scale) (bottom-right)
-    logger.debug("Creating histogram with KDE (log scale)")
-    try:
-        sns.histplot(tensor_np, kde=True, ax=axs[1, 1])
-        axs[1, 1].set_title("Histogram with KDE (Log Scale)")
-        axs[1, 1].set_xlabel("Value")
-        axs[1, 1].set_ylabel("Count")
-        axs[1, 1].set_yscale("log")
-    except Exception as e:
-        logger.error(f"Failed to create log-scale histogram: {e}")
-        axs[1, 1].text(
-            0.5,
-            0.5,
-            f"Log Histogram Error: {str(e)}",
-            ha="center",
-            va="center",
-            transform=axs[1, 1].transAxes,
-        )
-        axs[1, 1].set_title("Histogram Log Scale (Error)")
+    create_hist_kde_plot(tensor_np, ax=axs[1, 1], log_scale=True)
 
     # Adjust layout for better spacing
     plt.tight_layout()
