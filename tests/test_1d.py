@@ -4,10 +4,8 @@ import os
 from alltheplots import plot, set_log_level
 from alltheplots.utils.logger import logger
 from pathlib import Path
-import importlib.util
 import matplotlib
 import tempfile
-import shutil
 
 # Use Agg backend to prevent interactive windows
 matplotlib.use("Agg")

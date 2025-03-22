@@ -1,4 +1,3 @@
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from .plots_1d import plot_1d
@@ -49,7 +48,7 @@ def plot(tensor, filename=None, dpi=100, style="darkgrid", show=True):
         # For now, just use the basic plotting for higher dimensions
         # This will be replaced with specialized plot functions in the future
         # Set the style for the plot
-        sns.set(style=style)
+        sns.set_theme(style=style)
         logger.debug(f"Set seaborn style to '{style}'")
 
         # Create a figure and axis
