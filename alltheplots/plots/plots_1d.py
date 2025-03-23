@@ -4,18 +4,37 @@ from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 
 # Import functions from the individual plot modules
-from .one_dim.line_plot import create_line_plot
-from .one_dim.fft_plot import create_fft_plot
-from .one_dim.hist_kde_plot import create_hist_kde_plot
+from .one_dim.time_domain import (
+    create_line_scatter_plot,
+    create_line_scatter_logx_plot,
+    create_line_scatter_logy_plot,
+)
+from .one_dim.frequency_domain import (
+    create_fft_magnitude_plot,
+    create_autocorrelation_plot,
+    create_psd_plot,
+)
+from .one_dim.distribution import create_hist_kde_plot, create_violin_plot, create_cdf_plot
 
 
 def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
     """
-    Generate a comprehensive visualization of a 1D tensor with four plots:
-    1. Time-domain line plot (or scatter plot for high-frequency data)
-    2. Frequency-domain (FFT magnitude) plot (with optional DC component removal)
-    3. Histogram with KDE overlay (normal scale)
-    4. Histogram with KDE overlay (logarithmic scale)
+    Generate a comprehensive visualization of a 1D tensor with a 3×3 grid of plots:
+
+    Column 1 (Time Domain):
+    - Line/scatter plot (auto-selects based on data characteristics)
+    - Line/scatter plot with x-log scale
+    - Line/scatter plot with y-log scale
+
+    Column 2 (Frequency/Derived):
+    - FFT Magnitude (auto log-scale magnitude if large dynamic range)
+    - Autocorrelation
+    - Power Spectral Density (PSD)
+
+    Column 3 (Distribution):
+    - Histogram + KDE (auto log-scale if sensible, discrete bar if few unique values)
+    - Violin plot
+    - Cumulative Distribution Function (CDF)
 
     Parameters:
         tensor (array-like): The input 1D tensor to plot
@@ -28,7 +47,7 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
     Returns:
         matplotlib.figure.Figure: The figure containing the plots, or None if displayed
     """
-    logger.info("Creating 1D plot")
+    logger.info("Creating 1D plot with 3×3 grid layout")
 
     # Convert to numpy array using our robust conversion utility
     try:
@@ -38,26 +57,90 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
         logger.error(f"Failed to convert tensor to numpy: {e}")
         raise
 
-    # Create a 2x2 grid of subplots
-    fig, axs = plt.subplots(2, 2, figsize=(12, 10))
-    logger.debug("Created 2x2 subplot grid")
-    fig.suptitle("1D Tensor Analysis", fontsize=16)
+    # Create a 3x3 grid of subplots with shared x-axes within columns
+    # Reduced figure size and spacing for more compact layout
+    fig, axs = plt.subplots(3, 3, figsize=(8, 8), gridspec_kw={"hspace": 0.3, "wspace": 0.4})
+    logger.debug("Created 3×3 subplot grid with compact layout")
 
-    # 1. Time-domain line/scatter plot (top-left)
-    create_line_plot(tensor_np, ax=axs[0, 0])
+    # Column 1: Time Domain plots
+    # -------------------------------------
 
-    # 2. Frequency-domain FFT plot (top-right)
-    create_fft_plot(tensor_np, ax=axs[0, 1], remove_dc=remove_dc)
+    # 1. Line/scatter plot (top-left)
+    create_line_scatter_plot(tensor_np, ax=axs[0, 0], is_shared_x=True)
 
-    # 3. Histogram with KDE overlay (normal scale) (bottom-left)
-    create_hist_kde_plot(tensor_np, ax=axs[1, 0], log_scale=False)
+    # 2. Line/scatter plot with x-log scale (middle-left)
+    create_line_scatter_logx_plot(tensor_np, ax=axs[1, 0], is_shared_x=True)
 
-    # 4. Histogram with KDE overlay (logarithmic scale) (bottom-right)
-    create_hist_kde_plot(tensor_np, ax=axs[1, 1], log_scale=True)
+    # 3. Line/scatter plot with y-log scale (bottom-left)
+    create_line_scatter_logy_plot(tensor_np, ax=axs[2, 0], is_shared_x=False)
 
-    # Adjust layout for better spacing
-    plt.tight_layout()
-    logger.debug("Adjusted layout")
+    # Column 2: Frequency Domain plots
+    # -------------------------------------
+
+    # 4. FFT Magnitude (top-center)
+    create_fft_magnitude_plot(tensor_np, ax=axs[0, 1], remove_dc=remove_dc, is_shared_x=True)
+
+    # 5. Autocorrelation (middle-center)
+    create_autocorrelation_plot(tensor_np, ax=axs[1, 1], is_shared_x=True)
+
+    # 6. Power Spectral Density (bottom-center)
+    create_psd_plot(tensor_np, ax=axs[2, 1], is_shared_x=False)
+
+    # Column 3: Distribution plots
+    # -------------------------------------
+
+    # 7. Histogram + KDE (top-right)
+    create_hist_kde_plot(tensor_np, ax=axs[0, 2], is_shared_x=True)
+
+    # 8. Violin plot (middle-right)
+    create_violin_plot(tensor_np, ax=axs[1, 2], is_shared_x=True)
+
+    # 9. Cumulative Distribution Function (bottom-right)
+    create_cdf_plot(tensor_np, ax=axs[2, 2], is_shared_x=False)
+
+    # Add column headers (smaller font size)
+    axs[0, 0].text(
+        0.5,
+        1.15,
+        "Time Domain",
+        ha="center",
+        va="center",
+        transform=axs[0, 0].transAxes,
+        fontsize=12,
+        fontweight="bold",
+    )
+    axs[0, 1].text(
+        0.5,
+        1.15,
+        "Frequency Domain",
+        ha="center",
+        va="center",
+        transform=axs[0, 1].transAxes,
+        fontsize=12,
+        fontweight="bold",
+    )
+    axs[0, 2].text(
+        0.5,
+        1.15,
+        "Distribution",
+        ha="center",
+        va="center",
+        transform=axs[0, 2].transAxes,
+        fontsize=12,
+        fontweight="bold",
+    )
+
+    # Make plot fonts smaller for all subplots
+    for row in axs:
+        for ax in row:
+            ax.tick_params(axis="both", which="major", labelsize=8)
+            ax.xaxis.label.set_size(9)
+            ax.yaxis.label.set_size(9)
+            ax.title.set_size(10)
+
+    # Adjust layout for better spacing with tighter margins
+    plt.tight_layout(rect=[0, 0, 1, 0.95], pad=1.0)  # Reduced padding
+    logger.debug("Adjusted layout with tighter spacing")
 
     # Save or display the plot
     if filename:
