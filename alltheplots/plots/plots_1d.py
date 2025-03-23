@@ -1,3 +1,4 @@
+import seaborn as sns
 import matplotlib.pyplot as plt
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
@@ -58,7 +59,21 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
 
     # Create a 3x3 grid of subplots with shared x-axes within columns
     # Further reduced figure size and spacing for more compact layout
-    fig, axs = plt.subplots(3, 3, figsize=(6, 6), gridspec_kw={"hspace": 0.1, "wspace": 0.1})
+    fig, axs = plt.subplots(3, 3, figsize=(6, 6), gridspec_kw={"hspace": 0.6, "wspace": 0.5})
+
+    # Set constrained layout manually - this avoids deprecation warnings and works for all matplotlib versions
+    try:
+        # For newer matplotlib versions
+        plt.figure(fig.number, layout="constrained")
+
+        # Try to configure the layout engine if it exists
+        layout_engine = fig.get_layout_engine()
+        if layout_engine is not None:
+            layout_engine.set(w_pad=0.01, h_pad=0.01, hspace=0.01, wspace=0.01)
+    except Exception as e:
+        # Fallback for older matplotlib versions - use tight_layout later
+        logger.debug(f"Could not set constrained layout: {e}, will use tight_layout")
+
     logger.debug("Created 3×3 subplot grid with compact layout")
 
     # Column 1: Time Domain plots
@@ -137,13 +152,12 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
             ax.yaxis.label.set_size(9)
             ax.title.set_size(10)
 
-    # Use constrained_layout instead of tight_layout for better spacing management
-    # Also, reduce the outer padding around the entire figure
-    fig.set_constrained_layout(True)
-    fig.set_constrained_layout_pads(w_pad=0.01, h_pad=0.01, hspace=0.01, wspace=0.01)
-
-    # Remove extra whitespace around the plot area
-    plt.subplots_adjust(left=0.07, right=0.95, top=0.92, bottom=0.07)
+    # Apply tight_layout if constrained layout wasn't available
+    try:
+        fig.get_layout_engine()
+    except (AttributeError, NotImplementedError):
+        logger.debug("Using tight_layout for older matplotlib versions")
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     logger.debug("Adjusted layout with minimal whitespace")
 

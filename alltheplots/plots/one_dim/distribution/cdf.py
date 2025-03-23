@@ -54,7 +54,7 @@ def create_cdf_plot(tensor_np, ax=None, is_shared_x=False):
                 )
 
         # Set plot labels
-        ax.set_title("Cumulative Distribution Function")
+        ax.set_title("Cumulative \n Distribution Function")
         ax.set_xlabel("Value" if not is_shared_x else "")
         ax.set_ylabel("Cumulative Probability")
 
