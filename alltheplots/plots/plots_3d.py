@@ -61,7 +61,7 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
     # Create figure and gridspec with reduced wspace
     fig = plt.figure(figsize=(9, 8))
     # Force each of the 3 columns to have the same width
-    gs = fig.add_gridspec(3, 3, width_ratios=[1, 1, 1], hspace=0.75, wspace=0.33)
+    gs = fig.add_gridspec(3, 3, width_ratios=[1, 1.25, 1.25], hspace=0.75, wspace=0.5)
 
     # Create subplots
     axes = []
@@ -96,9 +96,6 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
         create_2d_projection_plot(tensor_np, ax=axes[0][2])
         create_hist_kde_plot_3d(tensor_np, ax=axes[1][2])
         create_cdf_plot_3d(tensor_np, ax=axes[2][2])
-
-        # Use tight_layout, but leave space on the right for the colorbar
-        fig.tight_layout(rect=[0, 0, 0.9, 1])
 
         # Add shared colorbar on the right for the slice plots
         colorbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
