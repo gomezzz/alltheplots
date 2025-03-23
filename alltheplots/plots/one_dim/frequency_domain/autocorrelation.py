@@ -23,8 +23,18 @@ def create_autocorrelation_plot(tensor_np, ax=None, is_shared_x=False, max_lags=
         _, ax = plt.subplots(figsize=(4, 3.5))
 
     try:
+        # Handle NaN or Inf values
+        if np.any(~np.isfinite(tensor_np)):
+            clean_data = tensor_np.copy()
+            clean_data = np.nan_to_num(clean_data, nan=0.0, posinf=0.0, neginf=0.0)
+            logger.warning(
+                "Found NaN or Inf values in data, replaced with zeros for autocorrelation"
+            )
+        else:
+            clean_data = tensor_np
+
         # Center the data by subtracting the mean
-        centered_data = tensor_np - np.mean(tensor_np)
+        centered_data = clean_data - np.mean(clean_data)
         N = len(centered_data)
 
         # Set default max_lags if not provided
@@ -34,11 +44,21 @@ def create_autocorrelation_plot(tensor_np, ax=None, is_shared_x=False, max_lags=
             max_lags = min(max_lags, N - 1)  # Ensure max_lags doesn't exceed N-1
 
         # Compute autocorrelation using numpy's correlate function
-        # 'same' mode returns the middle part of the correlation with same size as input
+        # 'full' mode returns the correlation at each lag
         autocorr = np.correlate(centered_data, centered_data, mode="full")
 
-        # Normalize by the autocorrelation at lag 0
-        autocorr = autocorr / np.max(autocorr)
+        # Handle all-zero or constant input data, which results in zero autocorrelation
+        max_autocorr = np.max(np.abs(autocorr))
+        if max_autocorr < 1e-10:  # Effectively zero
+            logger.warning(
+                "Autocorrelation is effectively zero, possibly constant or all-zero input"
+            )
+            # Set autocorr to zeros except at lag 0 (perfect correlation with itself)
+            autocorr = np.zeros_like(autocorr)
+            autocorr[len(autocorr) // 2] = 1.0
+        else:
+            # Normalize by the autocorrelation at lag 0 (maximum value)
+            autocorr = autocorr / max_autocorr
 
         # Extract the positive lags (including zero lag)
         lags = np.arange(-N + 1, N)

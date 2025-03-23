@@ -101,6 +101,73 @@ def sinusoid_data(framework):
         return framework.array(sin_wave)
 
 
+# List of test cases with specialized data characteristics to test all plot behaviors
+@pytest.fixture
+def test_cases():
+    """Generate specialized test cases with different data characteristics"""
+    return {
+        "small_normal": np.random.randn(30),  # small normal distribution
+        "exponential_decay": np.exp(-np.linspace(0, 5, 200)),  # exponential decay
+        "step_function": np.concatenate([np.zeros(50), np.ones(50)]),  # step function
+        "sparse_outliers": _add_outliers(np.zeros(500)),  # sparse with outliers
+        "sawtooth_wave": (np.linspace(0, 4 * np.pi, 400) % (2 * np.pi)) - np.pi,  # sawtooth wave
+        "uniform_integers": np.random.randint(-50, 50, 150),  # uniform integers
+        "quadratic_with_noise": np.linspace(-10, 10, 300) ** 2
+        + np.random.normal(0, 10, 300),  # quadratic with noise
+        "varying_frequency": np.sin(np.linspace(0, 20, 1000) ** 2),  # varying frequency sinusoid
+        "log_spaced": np.logspace(0, 3, 100),  # log-spaced data
+        "single_spike": np.eye(1, 1000, 500).flatten() * 100,  # single spike
+        "negative_values": -np.abs(np.random.randn(200)),  # exclusively negative values
+        "large_outliers": _add_extreme_outliers(np.random.randn(300)),  # large outliers
+        "few_unique_values": np.repeat(
+            [1, 2, 3, 4, 5], 40
+        ),  # few unique values (for discrete plots)
+        "bimodal": np.concatenate(
+            [np.random.normal(-5, 1, 100), np.random.normal(5, 1, 100)]
+        ),  # bimodal for histograms
+        "high_frequency": np.sin(np.linspace(0, 100 * np.pi, 500)),  # high frequency for FFT
+        "periodic_with_noise": np.sin(np.linspace(0, 6 * np.pi, 300))
+        + np.random.normal(0, 0.2, 300),  # periodic with noise
+        "constant": np.ones(200),  # constant data (edge case)
+        "very_small_dataset": np.random.randn(5),  # very small dataset
+        "long_tail": np.random.exponential(1, 500),  # long-tailed distribution
+        "inf_values": _add_inf_values(np.random.randn(100)),  # data with infinity values
+        "nan_values": _add_nan_values(np.random.randn(100)),  # data with NaN values
+    }
+
+
+def _add_outliers(arr):
+    """Add random outliers to an array"""
+    arr = arr.copy()
+    outlier_indices = np.random.choice(len(arr), 5, replace=False)
+    arr[outlier_indices] = np.random.randn(5) * 100
+    return arr
+
+
+def _add_extreme_outliers(arr):
+    """Add extreme outliers to an array"""
+    arr = arr.copy()
+    outlier_indices = np.random.choice(len(arr), 3, replace=False)
+    arr[outlier_indices] = np.array([10000, -8000, 12000])
+    return arr
+
+
+def _add_inf_values(arr):
+    """Add infinity values to an array"""
+    arr = arr.copy()
+    inf_indices = np.random.choice(len(arr), 2, replace=False)
+    arr[inf_indices] = np.array([np.inf, -np.inf])
+    return arr
+
+
+def _add_nan_values(arr):
+    """Add NaN values to an array"""
+    arr = arr.copy()
+    nan_indices = np.random.choice(len(arr), 3, replace=False)
+    arr[nan_indices] = np.nan
+    return arr
+
+
 @pytest.fixture(scope="module")
 def output_dir():
     """
@@ -151,6 +218,28 @@ def test_plot_1d(framework, random_data, sinusoid_data, data_type, output_dir):
         pytest.fail(f"1D plotting with {framework.__name__} ({data_type}) failed with error: {e}")
 
 
+@pytest.mark.dependency(name="plot_specialized_tests")
+@pytest.mark.plot_test
+def test_specialized_plot_cases(test_cases, output_dir):
+    """Test plotting with specialized data cases that exercise various plot features"""
+    for case_name, data in test_cases.items():
+        # Always save to file with an absolute path
+        filename = output_dir / f"specialized_{case_name}.png"
+        filepath = str(filename.absolute())
+        logger.info(f"Testing plot with specialized case: {case_name}")
+
+        try:
+            # Test saving to file - IMPORTANT: show=False in tests to prevent interactive windows
+            plot(data, filename=filepath, dpi=100, show=False)
+
+            # Verify file was created
+            assert filename.exists(), f"Output file {filename} not created"
+            logger.success(f"Successfully created {filename}")
+        except Exception as e:
+            logger.error(f"Test failed with error: {e}")
+            pytest.fail(f"1D plotting with specialized case {case_name} failed with error: {e}")
+
+
 @pytest.mark.dependency(depends=["plot_tests"])
 def test_output_dir_content(output_dir):
     """Test that output directory contains plot files"""
@@ -197,6 +286,36 @@ def test_output_dir_content(output_dir):
     logger.info(f"Plot outputs saved to: {output_dir}")
     for f in files:
         logger.info(f"- {f.name}")
+
+
+# Test cases that require additional computation or handling
+def test_edge_case_computations(output_dir):
+    """Test specialized cases with computations that need to be done at test time"""
+    test_cases = {
+        "increasing_frequency": np.sin(np.linspace(0, 50, 1000) * np.linspace(0, 10, 1000)),
+        "extreme_values_mix": np.concatenate([np.random.randn(200), np.array([1e6, -1e6])]),
+        "binary_pattern": np.tile([0, 1], 100),
+        "two_spikes": np.pad(np.ones(2), (49, 49), "constant"),
+        "exponential_growth": np.exp(np.linspace(0, 5, 200)),
+        "logarithmic_data": np.log(np.linspace(1, 100, 200)),
+    }
+
+    for case_name, data in test_cases.items():
+        # Always save to file with an absolute path
+        filename = output_dir / f"edge_case_{case_name}.png"
+        filepath = str(filename.absolute())
+        logger.info(f"Testing plot with edge case: {case_name}")
+
+        try:
+            # Test saving to file - IMPORTANT: show=False in tests to prevent interactive windows
+            plot(data, filename=filepath, dpi=100, show=False)
+
+            # Verify file was created
+            assert filename.exists(), f"Output file {filename} not created"
+            logger.success(f"Successfully created {filename}")
+        except Exception as e:
+            logger.error(f"Test failed with error: {e}")
+            pytest.fail(f"1D plotting with edge case {case_name} failed with error: {e}")
 
 
 # Clean up the module output directory when all tests are done

@@ -62,9 +62,6 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
 
     # Set constrained layout manually - this avoids deprecation warnings and works for all matplotlib versions
     try:
-        # For newer matplotlib versions
-        plt.figure(fig.number, layout="constrained")
-
         # Try to configure the layout engine if it exists
         layout_engine = fig.get_layout_engine()
         if layout_engine is not None:
