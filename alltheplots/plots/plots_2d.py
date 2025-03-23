@@ -7,10 +7,10 @@ from .two_dim.overview import (
     create_heatmap_plot,
     create_contour_plot,
     create_surface_3d_plot,
-    create_hist3d_plot,
 )
 from .two_dim.distribution import create_hist_kde_plot
 from .two_dim.slicing import create_row_mean_plot, create_col_mean_plot
+from .two_dim.frequency_domain import create_fft2d_plot
 
 
 def plot_2d(tensor, filename=None, dpi=100, show=True):
@@ -29,7 +29,7 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
 
     Column 3 (Shape Analysis):
     - Contour plot
-    - 3D Histogram
+    - 2D FFT Magnitude
     - Heatmap
 
     Parameters:
@@ -62,8 +62,8 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
     for i in range(3):
         row = []
         for j in range(3):
-            if (j == 0) or (j == 2 and i == 1):  # All of column 1 and 3D histogram need 3D projection
-                ax = fig.add_subplot(gs[i, j], projection='3d')
+            if j == 0:  # All of column 1 need 3D projection
+                ax = fig.add_subplot(gs[i, j], projection="3d")
             else:
                 ax = fig.add_subplot(gs[i, j])
             row.append(ax)
@@ -74,11 +74,11 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
         # Front view
         create_surface_3d_plot(tensor_np, ax=axes[0][0], view_angle=(30, -60))
         axes[0][0].set_title("3D Surface (Front)")
-        
+
         # Side view
         create_surface_3d_plot(tensor_np, ax=axes[1][0], view_angle=(30, -120))
         axes[1][0].set_title("3D Surface (Side)")
-        
+
         # Top view
         create_surface_3d_plot(tensor_np, ax=axes[2][0], view_angle=(90, -90))
         axes[2][0].set_title("3D Surface (Top)")
@@ -90,15 +90,19 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
 
         # Column 3: Shape Analysis
         create_contour_plot(tensor_np, ax=axes[0][2])
-        create_hist3d_plot(tensor_np, ax=axes[1][2])
+        create_fft2d_plot(tensor_np, ax=axes[1][2], remove_dc=True)
         create_heatmap_plot(tensor_np, ax=axes[2][2])
 
         # Add column headers
         for col, title in enumerate(["3D Views", "Distribution Analysis", "Shape Analysis"]):
             fig.text(
-                0.15 + col * 0.33, 0.95, title,
-                ha='center', va='center',
-                fontsize=12, fontweight='bold'
+                0.15 + col * 0.33,
+                0.95,
+                title,
+                ha="center",
+                va="center",
+                fontsize=12,
+                fontweight="bold",
             )
 
     except Exception as e:
