@@ -3,13 +3,14 @@ import matplotlib.pyplot as plt
 from ....utils.logger import logger
 
 
-def create_contour_plot(tensor_np, ax=None):
+def create_contour_plot(tensor_np, ax=None, add_colorbar=True):
     """
     Create a contour plot of 2D data with automatic level selection.
 
     Parameters:
         tensor_np (numpy.ndarray): The 2D numpy array to visualize
         ax (matplotlib.axes.Axes, optional): The matplotlib axis to plot on. If None, a new one is created.
+        add_colorbar (bool): Whether to add a colorbar to the plot. Default is True.
 
     Returns:
         matplotlib.axes.Axes: The axis with the plot
@@ -64,7 +65,8 @@ def create_contour_plot(tensor_np, ax=None):
 
             # Create filled contour plot with colorbar
             contour = ax.contourf(X, Y, tensor_np, levels=levels, cmap="viridis")
-            plt.colorbar(contour, ax=ax, fraction=0.046, pad=0.04)
+            if add_colorbar:
+                plt.colorbar(contour, ax=ax, fraction=0.046, pad=0.04)
 
             # Add contour lines with labels for better readability
             contour_lines = ax.contour(

@@ -54,8 +54,8 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
         raise
 
     # Create a 3x3 grid of subplots
-    fig = plt.figure(figsize=(15, 12))
-    gs = fig.add_gridspec(3, 3, hspace=0.4, wspace=0.3)
+    fig = plt.figure(figsize=(9, 8))
+    gs = fig.add_gridspec(3, 3, hspace=0.75, wspace=0.75)
 
     # Create all subplots with appropriate projections
     axes = []
@@ -72,38 +72,66 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
     try:
         # Column 1: 3D Views
         # Front view
-        create_surface_3d_plot(tensor_np, ax=axes[0][0], view_angle=(30, -60))
+        create_surface_3d_plot(
+            tensor_np, ax=axes[0][0], view_angle=(30, -60), add_colorbar=False, show_axes=False
+        )
         axes[0][0].set_title("3D Surface (Front)")
 
         # Side view
-        create_surface_3d_plot(tensor_np, ax=axes[1][0], view_angle=(30, -120))
+        create_surface_3d_plot(
+            tensor_np, ax=axes[1][0], view_angle=(30, -120), add_colorbar=False, show_axes=False
+        )
         axes[1][0].set_title("3D Surface (Side)")
 
         # Top view
-        create_surface_3d_plot(tensor_np, ax=axes[2][0], view_angle=(90, -90))
+        create_surface_3d_plot(tensor_np, ax=axes[2][0], view_angle=(90, -90), add_colorbar=False)
         axes[2][0].set_title("3D Surface (Top)")
 
         # Column 2: Distribution Analysis
-        create_hist_kde_plot(tensor_np, ax=axes[0][1])
+        create_hist_kde_plot(tensor_np, ax=axes[0][1], add_colorbar=False)
         create_row_mean_plot(tensor_np, ax=axes[1][1])
         create_col_mean_plot(tensor_np, ax=axes[2][1])
 
         # Column 3: Shape Analysis
-        create_contour_plot(tensor_np, ax=axes[0][2])
-        create_fft2d_plot(tensor_np, ax=axes[1][2], remove_dc=True)
-        create_heatmap_plot(tensor_np, ax=axes[2][2])
+        create_contour_plot(tensor_np, ax=axes[0][2], add_colorbar=False)
+        create_fft2d_plot(tensor_np, ax=axes[1][2], remove_dc=True, add_colorbar=False)
+        _, im = create_heatmap_plot(tensor_np, ax=axes[2][2], add_colorbar=False)
 
-        # Add column headers
-        for col, title in enumerate(["3D Views", "Distribution Analysis", "Shape Analysis"]):
-            fig.text(
-                0.15 + col * 0.33,
-                0.95,
-                title,
-                ha="center",
-                va="center",
-                fontsize=12,
-                fontweight="bold",
-            )
+        # Add shared colorbar on the right
+        colorbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+        fig.colorbar(im, cax=colorbar_ax, label="Value")
+
+        # Add column headers using the same style as plot_1d, but handle 3D axes differently
+        axes[0][0].text2D(
+            0.5,
+            1.25,
+            "3D Views",
+            ha="center",
+            va="center",
+            transform=axes[0][0].transAxes,
+            fontsize=12,
+            fontweight="bold",
+        )
+        axes[0][1].text(
+            0.5,
+            1.25,
+            "Distribution Analysis",
+            ha="center",
+            va="center",
+            transform=axes[0][1].transAxes,
+            fontsize=12,
+            fontweight="bold",
+        )
+        axes[0][2].text(
+            0.5,
+            1.25,
+            "Shape Analysis",
+            ha="center",
+            va="center",
+            transform=axes[0][2].transAxes,
+            fontsize=12,
+            fontweight="bold",
+        )
 
     except Exception as e:
         logger.error(f"Failed to create one or more plots: {e}")

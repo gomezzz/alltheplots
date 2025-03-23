@@ -4,13 +4,14 @@ import seaborn as sns
 from ....utils.logger import logger
 
 
-def create_hist_kde_plot(tensor_np, ax=None):
+def create_hist_kde_plot(tensor_np, ax=None, add_colorbar=True):
     """
     Create a combined histogram and KDE plot for 2D data.
 
     Parameters:
         tensor_np (numpy.ndarray): The 2D numpy array to analyze
         ax (matplotlib.axes.Axes, optional): The matplotlib axis to plot on. If None, a new one is created.
+        add_colorbar (bool): Whether to add a colorbar to the plot. Default is True.
 
     Returns:
         matplotlib.axes.Axes: The axis with the plot

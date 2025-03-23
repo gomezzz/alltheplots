@@ -4,7 +4,7 @@ from scipy import fft
 from ....utils.logger import logger
 
 
-def create_fft2d_plot(tensor_np, ax=None, remove_dc=True):
+def create_fft2d_plot(tensor_np, ax=None, remove_dc=True, add_colorbar=True):
     """
     Create a 2D FFT magnitude plot with automatic log scaling and DC component removal.
 
@@ -12,6 +12,7 @@ def create_fft2d_plot(tensor_np, ax=None, remove_dc=True):
         tensor_np (numpy.ndarray): The 2D numpy array to compute FFT for
         ax (matplotlib.axes.Axes, optional): The matplotlib axis to plot on. If None, a new one is created.
         remove_dc (bool): Whether to remove the DC component (center frequency) from the plot. Default is True.
+        add_colorbar (bool): Whether to add a colorbar to the plot. Default is True.
 
     Returns:
         matplotlib.axes.Axes: The axis with the plot
@@ -53,7 +54,8 @@ def create_fft2d_plot(tensor_np, ax=None, remove_dc=True):
         im = ax.pcolormesh(freq_x, freq_y, magnitude_log, shading="auto", cmap="viridis")
 
         # Add colorbar
-        plt.colorbar(im, ax=ax, label="Log Magnitude")
+        if add_colorbar:
+            plt.colorbar(im, ax=ax, label="Log Magnitude")
 
         # Set plot labels and title
         ax.set_title("2D FFT Magnitude")

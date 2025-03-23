@@ -3,16 +3,17 @@ import matplotlib.pyplot as plt
 from ....utils.logger import logger
 
 
-def create_heatmap_plot(tensor_np, ax=None):
+def create_heatmap_plot(tensor_np, ax=None, add_colorbar=True):
     """
     Create a heatmap visualization of 2D data with smart colormap selection.
 
     Parameters:
         tensor_np (numpy.ndarray): The 2D numpy array to visualize
         ax (matplotlib.axes.Axes, optional): The matplotlib axis to plot on. If None, a new one is created.
+        add_colorbar (bool): Whether to add a colorbar to the plot. Default is True.
 
     Returns:
-        matplotlib.axes.Axes: The axis with the plot
+        matplotlib.axes.Axes: The axis with the plot and the image object
     """
     logger.debug("Creating heatmap visualization")
 
@@ -43,7 +44,8 @@ def create_heatmap_plot(tensor_np, ax=None):
         im = ax.imshow(tensor_np, cmap=cmap, aspect="equal", interpolation="nearest")
 
         # Add colorbar with appropriate size and layout
-        plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        if add_colorbar:
+            plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
         # Set plot labels and title
         ax.set_title("Heatmap Visualization")
@@ -69,4 +71,4 @@ def create_heatmap_plot(tensor_np, ax=None):
         )
         ax.set_title("Heatmap (Error)")
 
-    return ax
+    return ax, im

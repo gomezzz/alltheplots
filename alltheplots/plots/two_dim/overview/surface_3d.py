@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from ....utils.logger import logger
 
 
-def create_surface_3d_plot(tensor_np, ax=None, view_angle=None):
+def create_surface_3d_plot(tensor_np, ax=None, view_angle=None, add_colorbar=True, show_axes=True):
     """
     Create a 3D surface plot of 2D data with specified view angle.
 
@@ -12,6 +12,8 @@ def create_surface_3d_plot(tensor_np, ax=None, view_angle=None):
         ax (matplotlib.axes.Axes, optional): The matplotlib 3D axis to plot on. If None, a new one is created.
         view_angle (tuple, optional): The (elevation, azimuth) view angle in degrees.
             If None, uses data-driven angle selection.
+        add_colorbar (bool): Whether to add a colorbar to the plot. Default is True.
+        show_axes (bool): Whether to show the axes. Default is True.
 
     Returns:
         matplotlib.axes.Axes: The axis with the plot
@@ -67,8 +69,9 @@ def create_surface_3d_plot(tensor_np, ax=None, view_angle=None):
             # Create the surface plot
             surf = ax.plot_surface(X, Y, tensor_np, cmap="viridis", linewidth=0.5, antialiased=True)
 
-            # Add a color bar
-            plt.colorbar(surf, ax=ax, fraction=0.046, pad=0.04)
+            # Add a color bar if requested
+            if add_colorbar:
+                plt.colorbar(surf, ax=ax, fraction=0.046, pad=0.04)
 
             # Set view angle based on input or data characteristics
             if view_angle is not None:
@@ -98,10 +101,16 @@ def create_surface_3d_plot(tensor_np, ax=None, view_angle=None):
                 margin = (z_max - z_min) * 0.1
                 ax.set_zlim(z_min - margin, z_max + margin)
 
-        # Set plot labels
-        ax.set_xlabel("Column Index")
-        ax.set_ylabel("Row Index")
-        ax.set_zlabel("Value")
+        # Set plot labels with fixed rotation for better readability
+        if show_axes:
+            ax.set_xlabel("Column Index", rotation=0)
+            ax.set_ylabel("Row Index", rotation=0)
+            ax.set_zlabel("Value", rotation=0)
+
+        # Adjust label padding to prevent overlap
+        ax.xaxis.set_label_coords(0.5, -0.2)
+        ax.yaxis.set_label_coords(-0.2, 0.5)
+        ax.zaxis.set_label_coords(-0.2, 0.5)
 
         # Add grid lines for better depth perception
         ax.grid(True, alpha=0.3)
