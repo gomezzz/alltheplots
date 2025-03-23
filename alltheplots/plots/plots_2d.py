@@ -2,42 +2,35 @@ import matplotlib.pyplot as plt
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 
-# Import functions from the individual plot modules (will add these as we create them)
+# Import functions from the individual plot modules
 from .two_dim.overview import (
     create_heatmap_plot,
     create_contour_plot,
+    create_scatter_plot,
     create_surface_3d_plot,
 )
-from .two_dim.distribution import (
-    create_hist_plot,
-    create_kde_plot,
-    create_hist_log_plot,
-)
-from .two_dim.slicing import (
-    create_row_mean_plot,
-    create_col_mean_plot,
-    create_cross_section_plot,
-)
+from .two_dim.distribution import create_hist_kde_plot
+from .two_dim.slicing import create_row_mean_plot, create_col_mean_plot
 
 
 def plot_2d(tensor, filename=None, dpi=100, show=True):
     """
     Generate a comprehensive visualization of a 2D tensor with a 3×3 grid of plots:
 
-    Column 1 (Overview):
+    Row 1 (Overview):
     - Heatmap visualization
-    - Histogram of all values
-    - Row mean plot
-
-    Column 2 (Advanced View):
     - Contour plot
-    - KDE of pixel intensities
-    - Column mean plot
+    - Scatter plot
 
-    Column 3 (Additional Analysis):
-    - 3D Surface plot
-    - Histogram (log scale)
-    - Central cross-section view
+    Row 2 (3D Views):
+    - 3D Surface plot (front view)
+    - 3D Surface plot (side view)
+    - 3D Surface plot (top view)
+
+    Row 3 (Analysis):
+    - Row mean plot
+    - Column mean plot
+    - Histogram with KDE
 
     Parameters:
         tensor (array-like): The input 2D tensor to plot
@@ -64,14 +57,12 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
     fig = plt.figure(figsize=(12, 10))
     gs = fig.add_gridspec(3, 3, hspace=0.4, wspace=0.3)
 
-    # Create all subplots
+    # Create all subplots with appropriate projections
     axes = []
     for i in range(3):
         row = []
         for j in range(3):
-            if i == 2 and j == 2:  # Last plot (cross-section) needs more space
-                ax = fig.add_subplot(gs[i, j])
-            elif j == 2 and i == 0:  # 3D surface plot
+            if i == 1:  # Second row is all 3D plots
                 ax = fig.add_subplot(gs[i, j], projection="3d")
             else:
                 ax = fig.add_subplot(gs[i, j])
@@ -79,23 +70,31 @@ def plot_2d(tensor, filename=None, dpi=100, show=True):
         axes.append(row)
 
     try:
-        # Column 1: Overview
+        # Row 1: Overview plots
         create_heatmap_plot(tensor_np, ax=axes[0][0])
-        create_hist_plot(tensor_np, ax=axes[1][0])
-        create_row_mean_plot(tensor_np, ax=axes[2][0])
-
-        # Column 2: Advanced View
         create_contour_plot(tensor_np, ax=axes[0][1])
-        create_kde_plot(tensor_np, ax=axes[1][1])
-        create_col_mean_plot(tensor_np, ax=axes[2][1])
+        create_scatter_plot(tensor_np, ax=axes[0][2])
 
-        # Column 3: Additional Analysis
-        create_surface_3d_plot(tensor_np, ax=axes[0][2])
-        create_hist_log_plot(tensor_np, ax=axes[1][2])
-        create_cross_section_plot(tensor_np, ax=axes[2][2])
+        # Row 2: 3D Surface plots from different angles
+        # Front view
+        create_surface_3d_plot(tensor_np, ax=axes[1][0], view_angle=(30, -60))
+        axes[1][0].set_title("3D Surface (Front)")
+
+        # Side view
+        create_surface_3d_plot(tensor_np, ax=axes[1][1], view_angle=(30, -120))
+        axes[1][1].set_title("3D Surface (Side)")
+
+        # Top view
+        create_surface_3d_plot(tensor_np, ax=axes[1][2], view_angle=(90, -90))
+        axes[1][2].set_title("3D Surface (Top)")
+
+        # Row 3: Analysis plots
+        create_row_mean_plot(tensor_np, ax=axes[2][0])
+        create_col_mean_plot(tensor_np, ax=axes[2][1])
+        create_hist_kde_plot(tensor_np, ax=axes[2][2])
 
         # Add column headers
-        for col, title in enumerate(["Overview", "Advanced View", "Additional Analysis"]):
+        for col, title in enumerate(["Overview", "Different Views", "Analysis"]):
             fig.text(
                 0.15 + col * 0.33,
                 0.95,

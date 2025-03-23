@@ -3,13 +3,15 @@ import matplotlib.pyplot as plt
 from ....utils.logger import logger
 
 
-def create_surface_3d_plot(tensor_np, ax=None):
+def create_surface_3d_plot(tensor_np, ax=None, view_angle=None):
     """
-    Create a 3D surface plot of 2D data with intelligent view angle selection.
+    Create a 3D surface plot of 2D data with specified view angle.
 
     Parameters:
         tensor_np (numpy.ndarray): The 2D numpy array to visualize
         ax (matplotlib.axes.Axes, optional): The matplotlib 3D axis to plot on. If None, a new one is created.
+        view_angle (tuple, optional): The (elevation, azimuth) view angle in degrees.
+            If None, uses data-driven angle selection.
 
     Returns:
         matplotlib.axes.Axes: The axis with the plot
@@ -68,19 +70,22 @@ def create_surface_3d_plot(tensor_np, ax=None):
             # Add a color bar
             plt.colorbar(surf, ax=ax, fraction=0.046, pad=0.04)
 
-            # Analyze data characteristics for optimal viewing angle
-            aspect_ratio = tensor_np.shape[1] / tensor_np.shape[0]
-            value_range = np.ptp(tensor_np[np.isfinite(tensor_np)])
-
-            # Adjust the view angle based on data characteristics
-            if aspect_ratio > 2 or aspect_ratio < 0.5:
-                # For very rectangular data, view from the longer side
-                elev = 20
-                azim = 45 if aspect_ratio > 1 else -45
+            # Set view angle based on input or data characteristics
+            if view_angle is not None:
+                elev, azim = view_angle
             else:
-                # For more square data, use standard angles
-                elev = 30
-                azim = -60
+                # Analyze data characteristics for optimal viewing angle
+                aspect_ratio = tensor_np.shape[1] / tensor_np.shape[0]
+
+                # Adjust the view angle based on data characteristics
+                if aspect_ratio > 2 or aspect_ratio < 0.5:
+                    # For very rectangular data, view from the longer side
+                    elev = 20
+                    azim = 45 if aspect_ratio > 1 else -45
+                else:
+                    # For more square data, use standard angles
+                    elev = 30
+                    azim = -60
 
             ax.view_init(elev=elev, azim=azim)
 
@@ -93,8 +98,7 @@ def create_surface_3d_plot(tensor_np, ax=None):
                 margin = (z_max - z_min) * 0.1
                 ax.set_zlim(z_min - margin, z_max + margin)
 
-        # Set plot labels and title
-        ax.set_title("3D Surface Plot")
+        # Set plot labels
         ax.set_xlabel("Column Index")
         ax.set_ylabel("Row Index")
         ax.set_zlabel("Value")
@@ -114,6 +118,5 @@ def create_surface_3d_plot(tensor_np, ax=None):
             transform=ax.transAxes,
             fontsize=8,
         )
-        ax.set_title("3D Surface Plot (Error)")
 
     return ax
