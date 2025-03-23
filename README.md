@@ -90,7 +90,9 @@ Users are encouraged to manage the visual style externally by setting global the
 
 ```python
 import seaborn as sns
-sns.set_theme(style="whitegrid")
+import matplotlib.pyplot as plt
+sns.set_theme(style="ticks", palette="deep")
+plt.style.use("dark_background")
 
 # Then call the plot function
 plot(data)
