@@ -32,6 +32,24 @@ def create_surface_3d_plot(tensor_np, ax=None, view_angle=None, add_colorbar=Tru
         unique_vals = np.unique(tensor_np[np.isfinite(tensor_np)])
         n_unique = len(unique_vals)
 
+        # Analyze data characteristics for colormap selection
+        has_negative = np.any(tensor_np < 0)
+        is_diverging = has_negative and np.any(tensor_np > 0)
+        dynamic_range = (
+            np.ptp(tensor_np[np.isfinite(tensor_np)]) if np.any(np.isfinite(tensor_np)) else 0
+        )
+
+        # Select appropriate colormap
+        if is_diverging:
+            cmap = "RdBu_r"  # Red-Blue diverging colormap
+            logger.debug("Using diverging colormap for positive/negative values")
+        else:
+            if dynamic_range > 0:
+                cmap = "viridis"  # General-purpose perceptually uniform colormap
+            else:
+                cmap = "gray"  # Grayscale for constant data
+            logger.debug(f"Using {cmap} colormap based on data characteristics")
+
         if n_unique <= 1:
             # Handle constant data case
             logger.debug("Constant data detected, creating flat surface")
@@ -42,7 +60,7 @@ def create_surface_3d_plot(tensor_np, ax=None, view_angle=None, add_colorbar=Tru
                     X,
                     Y,
                     np.full_like(tensor_np, val),
-                    cmap="viridis",
+                    cmap=cmap,
                     linewidth=0.5,
                     antialiased=True,
                 )
@@ -67,7 +85,7 @@ def create_surface_3d_plot(tensor_np, ax=None, view_angle=None, add_colorbar=Tru
                 ax.set_zlim(-1, 1)  # Set default z limits
         else:
             # Create the surface plot
-            surf = ax.plot_surface(X, Y, tensor_np, cmap="viridis", linewidth=0.5, antialiased=True)
+            surf = ax.plot_surface(X, Y, tensor_np, cmap=cmap, linewidth=0.5, antialiased=True)
 
             # Add a color bar if requested
             if add_colorbar:

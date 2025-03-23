@@ -63,8 +63,26 @@ def create_contour_plot(tensor_np, ax=None, add_colorbar=True):
                 levels = n_levels
                 logger.debug(f"Using {n_levels} levels for contour plot")
 
+            # Analyze data characteristics for colormap selection
+            has_negative = np.any(tensor_np < 0)
+            is_diverging = has_negative and np.any(tensor_np > 0)
+            dynamic_range = (
+                np.ptp(tensor_np[np.isfinite(tensor_np)]) if np.any(np.isfinite(tensor_np)) else 0
+            )
+
+            # Select appropriate colormap
+            if is_diverging:
+                cmap = "RdBu_r"  # Red-Blue diverging colormap
+                logger.debug("Using diverging colormap for positive/negative values")
+            else:
+                if dynamic_range > 0:
+                    cmap = "viridis"  # General-purpose perceptually uniform colormap
+                else:
+                    cmap = "gray"  # Grayscale for constant data
+                logger.debug(f"Using {cmap} colormap based on data characteristics")
+
             # Create filled contour plot with colorbar
-            contour = ax.contourf(X, Y, tensor_np, levels=levels, cmap="viridis")
+            contour = ax.contourf(X, Y, tensor_np, levels=levels, cmap=cmap)
             if add_colorbar:
                 plt.colorbar(contour, ax=ax, fraction=0.046, pad=0.04)
 
