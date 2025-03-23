@@ -69,8 +69,8 @@ def create_hist_kde_plot(tensor_np, ax=None, is_shared_x=False):
                 ax2 = ax.twinx()
                 ax2._get_lines.get_next_color()  # Skip to next color to avoid same color as bars
                 try:
-                    # Use smaller linewidth for KDE
-                    density = sns.kdeplot(tensor_np, ax=ax2, color="r", linewidth=0.8, alpha=0.7)
+                    # Use standard kdeplot without passing linewidth in the kde_kws
+                    density = sns.kdeplot(x=tensor_np, ax=ax2, color="r", alpha=0.7)
                     ax2.set_ylabel("Density", fontsize=8)
                     # Hide the right y-axis labels to avoid clutter
                     ax2.tick_params(axis="y", labelright=False)
@@ -80,15 +80,8 @@ def create_hist_kde_plot(tensor_np, ax=None, is_shared_x=False):
             # For continuous data or discrete with many values, use regular histplot with smaller bins
             logger.debug("Using continuous histogram with KDE overlay")
             bins = min(50, max(10, int(n_unique / 5))) if n_unique > 5 else "auto"
-            sns.histplot(
-                tensor_np,
-                kde=True,
-                ax=ax,
-                bins=bins,
-                kde_kws={"linewidth": 0.8, "alpha": 0.7},
-                alpha=0.6,
-                edgecolor="none",
-            )
+            # Fix: Remove the kde_kws with linewidth parameter
+            sns.histplot(x=tensor_np, kde=True, ax=ax, bins=bins, alpha=0.6, edgecolor="none")
 
         # Apply log scale to y-axis if needed
         if use_log_scale:

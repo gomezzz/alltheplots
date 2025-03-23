@@ -47,7 +47,7 @@ def create_psd_plot(tensor_np, ax=None, is_shared_x=False):
         if use_log_scale:
             logger.debug(f"Using log scale for PSD (dynamic range: {dynamic_range:.1e})")
             ax.set_yscale("log")
-            ax.set_title("Power Spectral Density (Log Scale)")
+            ax.set_title("Power Spectral Density \n (Log Scale)")
         else:
             ax.set_title("Power Spectral Density")
 

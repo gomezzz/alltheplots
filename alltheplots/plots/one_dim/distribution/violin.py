@@ -37,7 +37,8 @@ def create_violin_plot(tensor_np, ax=None, is_shared_x=False):
 
         # Set plot labels
         ax.set_title("Violin Plot")
-        ax.set_ylabel("Value" if not is_shared_x else "")
+        ax.set_ylabel("Value")
+        ax.set_xlabel("Frequency of Values")
 
         # Add horizontal grid lines with less visual weight
         ax.grid(axis="y", linestyle="--", alpha=0.5, linewidth=0.5)

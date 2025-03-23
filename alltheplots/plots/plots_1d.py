@@ -58,8 +58,8 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
         raise
 
     # Create a 3x3 grid of subplots with shared x-axes within columns
-    # Reduced figure size and spacing for more compact layout
-    fig, axs = plt.subplots(3, 3, figsize=(8, 8), gridspec_kw={"hspace": 0.3, "wspace": 0.4})
+    # Further reduced figure size and spacing for more compact layout
+    fig, axs = plt.subplots(3, 3, figsize=(6, 6), gridspec_kw={"hspace": 0.1, "wspace": 0.1})
     logger.debug("Created 3×3 subplot grid with compact layout")
 
     # Column 1: Time Domain plots
@@ -98,10 +98,10 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
     # 9. Cumulative Distribution Function (bottom-right)
     create_cdf_plot(tensor_np, ax=axs[2, 2], is_shared_x=False)
 
-    # Add column headers (smaller font size)
+    # Add column headers (smaller font size and positioned closer to plots)
     axs[0, 0].text(
         0.5,
-        1.15,
+        1.25,
         "Time Domain",
         ha="center",
         va="center",
@@ -111,7 +111,7 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
     )
     axs[0, 1].text(
         0.5,
-        1.15,
+        1.25,
         "Frequency Domain",
         ha="center",
         va="center",
@@ -121,7 +121,7 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
     )
     axs[0, 2].text(
         0.5,
-        1.15,
+        1.25,
         "Distribution",
         ha="center",
         va="center",
@@ -138,15 +138,21 @@ def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
             ax.yaxis.label.set_size(9)
             ax.title.set_size(10)
 
-    # Adjust layout for better spacing with tighter margins
-    plt.tight_layout(rect=[0, 0, 1, 0.95], pad=1.0)  # Reduced padding
-    logger.debug("Adjusted layout with tighter spacing")
+    # Use constrained_layout instead of tight_layout for better spacing management
+    # Also, reduce the outer padding around the entire figure
+    fig.set_constrained_layout(True)
+    fig.set_constrained_layout_pads(w_pad=0.01, h_pad=0.01, hspace=0.01, wspace=0.01)
+
+    # Remove extra whitespace around the plot area
+    plt.subplots_adjust(left=0.07, right=0.95, top=0.92, bottom=0.07)
+
+    logger.debug("Adjusted layout with minimal whitespace")
 
     # Save or display the plot
     if filename:
         logger.info(f"Saving plot to file: {filename}")
         try:
-            plt.savefig(filename, dpi=dpi)
+            plt.savefig(filename, dpi=dpi, bbox_inches="tight", pad_inches=0.2)
             logger.success(f"Plot saved to {filename}")
         except Exception as e:
             logger.error(f"Failed to save plot to {filename}: {e}")
