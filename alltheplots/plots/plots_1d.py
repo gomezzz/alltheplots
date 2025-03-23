@@ -1,4 +1,3 @@
-import seaborn as sns
 import matplotlib.pyplot as plt
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger

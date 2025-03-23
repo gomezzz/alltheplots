@@ -70,7 +70,7 @@ def create_hist_kde_plot(tensor_np, ax=None, is_shared_x=False):
                 ax2._get_lines.get_next_color()  # Skip to next color to avoid same color as bars
                 try:
                     # Use standard kdeplot without passing linewidth in the kde_kws
-                    density = sns.kdeplot(x=tensor_np, ax=ax2, color="r", alpha=0.7)
+                    _ = sns.kdeplot(x=tensor_np, ax=ax2, color="r", alpha=0.7)
                     ax2.set_ylabel("Density", fontsize=8)
                     # Hide the right y-axis labels to avoid clutter
                     ax2.tick_params(axis="y", labelright=False)
