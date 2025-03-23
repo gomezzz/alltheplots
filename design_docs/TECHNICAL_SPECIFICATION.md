@@ -1,4 +1,3 @@
-
 # Technical Specification for `alltheplots`
 
 ## 📌 Overview
@@ -9,7 +8,7 @@
 
 ### Public Interface:
 
-- Single entry-point function: `alltheplots.plot(tensor: arraylike, filename: Optional[str] = None, dpi: Optional[int] = 300, style: Optional[str] = 'darkgrid')`
+- Single entry-point function: `alltheplots.plot(tensor: arraylike, filename: Optional[str] = None, dpi: Optional[int] = 300)`
 
 ### Supported Dimensionalities:
 
@@ -45,7 +44,7 @@
 ## 🎨 Customization Options:
 
 - Saving plots directly to file with optional DPI specification.
-- Selecting predefined seaborn style themes (`darkgrid`, `whitegrid`, `dark`, `white`, `ticks`).
+- Users can manage plot styles externally by setting global themes in `matplotlib` or `seaborn`. This provides flexibility and adheres to best practices for managing plot aesthetics.
 
 ## 🚫 Out of Scope:
 
@@ -57,4 +56,4 @@
 - Automated testing (`pytest`) for each dimensionality.
 - Automated CI using GitHub Actions: formatting (`black`), linting (`flake8`), testing (`pytest`).
 - Deployment via PyPI (`pip`).
-- 
+-

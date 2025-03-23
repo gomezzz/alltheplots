@@ -9,7 +9,7 @@ from .one_dim.fft_plot import create_fft_plot
 from .one_dim.hist_kde_plot import create_hist_kde_plot
 
 
-def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True, remove_dc=True):
+def plot_1d(tensor, filename=None, dpi=100, show=True, remove_dc=True):
     """
     Generate a comprehensive visualization of a 1D tensor with four plots:
     1. Time-domain line plot (or scatter plot for high-frequency data)
@@ -21,7 +21,6 @@ def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True, remove_
         tensor (array-like): The input 1D tensor to plot
         filename (str, optional): The name of the output file. If None, the plot will be shown instead.
         dpi (int): The resolution of the output file in dots per inch.
-        style (str): The style of the plot. Default is "darkgrid".
         show (bool): Whether to display the plot interactively (True) or just return the figure (False).
                    Default is True except in test environments.
         remove_dc (bool): Whether to remove the DC component from the FFT plot. Default is True.
@@ -29,7 +28,7 @@ def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True, remove_
     Returns:
         matplotlib.figure.Figure: The figure containing the plots, or None if displayed
     """
-    logger.info(f"Creating 1D plot with style '{style}'")
+    logger.info("Creating 1D plot")
 
     # Convert to numpy array using our robust conversion utility
     try:
@@ -38,10 +37,6 @@ def plot_1d(tensor, filename=None, dpi=100, style="darkgrid", show=True, remove_
     except Exception as e:
         logger.error(f"Failed to convert tensor to numpy: {e}")
         raise
-
-    # Set the style
-    sns.set(style=style)
-    logger.debug(f"Set seaborn style to '{style}'")
 
     # Create a 2x2 grid of subplots
     fig, axs = plt.subplots(2, 2, figsize=(12, 10))

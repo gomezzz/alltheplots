@@ -5,7 +5,7 @@ from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 
 
-def plot(tensor, filename=None, dpi=100, style="darkgrid", show=True):
+def plot(tensor, filename=None, dpi=100, show=True):
     """
     Plot a tensor based on its dimensionality using appropriate visualization methods.
 
@@ -16,7 +16,6 @@ def plot(tensor, filename=None, dpi=100, style="darkgrid", show=True):
         tensor (array-like): The input tensor to plot.
         filename (str, optional): The name of the output file. If None, the plot will be shown instead.
         dpi (int): The resolution of the output file in dots per inch.
-        style (str): The style of the plot. Default is "darkgrid".
         show (bool): Whether to display the plot interactively. Default is True.
 
     Returns:
@@ -42,15 +41,10 @@ def plot(tensor, filename=None, dpi=100, style="darkgrid", show=True):
         len(effective_dims) <= 1
     ):  # Handle 1D case (including scalars and arrays with singleton dimensions)
         logger.info("Detected 1D tensor, routing to plot_1d")
-        return plot_1d(tensor_np, filename=filename, dpi=dpi, style=style, show=show)
+        return plot_1d(tensor_np, filename=filename, dpi=dpi, show=show)
     else:
         logger.info(f"Detected {len(effective_dims)}D tensor, using basic plotting")
         # For now, just use the basic plotting for higher dimensions
-        # This will be replaced with specialized plot functions in the future
-        # Set the style for the plot
-        sns.set_theme(style=style)
-        logger.debug(f"Set seaborn style to '{style}'")
-
         # Create a figure and axis
         fig, ax = plt.subplots()
         logger.debug("Created basic plot")

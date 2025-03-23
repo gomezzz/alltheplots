@@ -86,13 +86,17 @@ plot(data, filename="my_plot.png", dpi=300)
 
 ### Custom Theme
 
-Change the visual style with built-in seaborn themes:
+Users are encouraged to manage the visual style externally by setting global themes in `matplotlib` or `seaborn`. For example:
 
 ```python
-plot(data, style="whitegrid")
+import seaborn as sns
+sns.set_theme(style="whitegrid")
+
+# Then call the plot function
+plot(data)
 ```
 
-Available themes include: `darkgrid`, `whitegrid`, `dark`, `white`, and `ticks`.
+This approach provides more flexibility and aligns with best practices for managing plot aesthetics.
 
 ## Dependencies
 

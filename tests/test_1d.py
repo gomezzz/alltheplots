@@ -120,10 +120,9 @@ def output_dir():
 
 @pytest.mark.dependency(name="plot_tests")
 @pytest.mark.plot_test
-@pytest.mark.parametrize("style", ["darkgrid"])  # Reduced to one style to speed up tests
 @pytest.mark.parametrize("data_type", ["random", "sinusoid"])
-def test_plot_1d(framework, random_data, sinusoid_data, style, data_type, output_dir):
-    """Test 1D plotting with different frameworks, data types, and styles"""
+def test_plot_1d(framework, random_data, sinusoid_data, data_type, output_dir):
+    """Test 1D plotting with different frameworks, data types"""
     # Skip if the framework is not available
     if framework.__name__ not in frameworks:
         pytest.skip(f"Framework {framework.__name__} not available")
@@ -132,20 +131,20 @@ def test_plot_1d(framework, random_data, sinusoid_data, style, data_type, output
     data = random_data if data_type == "random" else sinusoid_data
 
     # Always save to file with an absolute path
-    filename = output_dir / f"{framework.__name__}_{data_type}_{style}.png"
+    filename = output_dir / f"{framework.__name__}_{data_type}.png"
     filepath = str(filename.absolute())
     logger.info(f"Testing plot with {framework.__name__} ({data_type}) to file {filepath}")
 
     try:
         # Test saving to file - IMPORTANT: show=False in tests to prevent interactive windows
-        plot(data, filename=filepath, dpi=100, style=style, show=False)
+        plot(data, filename=filepath, dpi=100, show=False)
 
         # Verify file was created
         assert filename.exists(), f"Output file {filename} not created"
         logger.success(f"Successfully created {filename}")
 
         # Test without filename (should return figure without displaying)
-        fig = plot(data, style=style, show=False)
+        fig = plot(data, show=False)
         assert fig is not None, "Expected plot function to return figure object"
     except Exception as e:
         logger.error(f"Test failed with error: {e}")
