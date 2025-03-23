@@ -58,16 +58,17 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
         logger.error(f"Failed to convert tensor to numpy: {e}")
         raise
 
-    # Create a 3x3 grid of subplots
+    # Create figure and gridspec with reduced wspace
     fig = plt.figure(figsize=(9, 8))
-    gs = fig.add_gridspec(3, 3, hspace=0.6, wspace=0.6)
+    # Force each of the 3 columns to have the same width
+    gs = fig.add_gridspec(3, 3, width_ratios=[1, 1, 1], hspace=0.75, wspace=0.33)
 
-    # Create all subplots
+    # Create subplots
     axes = []
     for i in range(3):
         row = []
         for j in range(3):
-            if j == 1:  # For column 2, we need 3D axes
+            if j == 1:  # The 2nd column is 3D
                 ax = fig.add_subplot(gs[i, j], projection="3d")
             else:
                 ax = fig.add_subplot(gs[i, j])
@@ -75,12 +76,12 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
         axes.append(row)
 
     try:
-        # Column 1: Slice Views
+        # --- Column 1: Slice Views ---
         _, im1 = create_xy_slice_plot(tensor_np, ax=axes[0][0], add_colorbar=False)
         _, im2 = create_xz_slice_plot(tensor_np, ax=axes[1][0], add_colorbar=False)
         _, im3 = create_yz_slice_plot(tensor_np, ax=axes[2][0], add_colorbar=False)
 
-        # Column 2: 3D Visualizations (Surface plots with averaging)
+        # --- Column 2: 3D Surfaces ---
         create_3d_surface_plot(
             tensor_np, ax=axes[0][1], axis=0, view_angle=(30, -60), add_colorbar=False
         )
@@ -91,16 +92,19 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
             tensor_np, ax=axes[2][1], axis=2, view_angle=(30, -60), add_colorbar=False
         )
 
-        # Column 3: Distribution Analysis
-        create_2d_projection_plot(tensor_np, ax=axes[0][2])  # t-SNE projection
-        create_hist_kde_plot_3d(tensor_np, ax=axes[1][2])  # Histogram with KDE
-        create_cdf_plot_3d(tensor_np, ax=axes[2][2])  # CDF
+        # --- Column 3: Distribution Analysis ---
+        create_2d_projection_plot(tensor_np, ax=axes[0][2])
+        create_hist_kde_plot_3d(tensor_np, ax=axes[1][2])
+        create_cdf_plot_3d(tensor_np, ax=axes[2][2])
 
-        # Add shared colorbar on the right for the image plots
+        # Use tight_layout, but leave space on the right for the colorbar
+        fig.tight_layout(rect=[0, 0, 0.9, 1])
+
+        # Add shared colorbar on the right for the slice plots
         colorbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
         fig.colorbar(im1, cax=colorbar_ax, label="Value")
 
-        # Add column headers
+        # --- Column Headers ---
         axes[0][0].text(
             0.5,
             1.25,
@@ -137,14 +141,13 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
         plt.close(fig)
         raise
 
-    # Save or display the plot
+    # Save or show
     if filename:
         logger.info(f"Saving plot to file: {filename}")
         try:
-            plt.savefig(filename, dpi=dpi, bbox_inches="tight", pad_inches=0.2)
-            logger.success(f"Plot saved to {filename}")
+            plt.savefig(filename, dpi=dpi)  # no bbox_inches='tight'
         except Exception as e:
-            logger.error(f"Failed to save plot to {filename}: {e}")
+            logger.error(f"Failed to save plot: {e}")
             raise
         finally:
             plt.close(fig)
