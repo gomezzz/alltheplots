@@ -24,33 +24,74 @@ def create_surface_3d_plot(tensor_np, ax=None):
         # Create coordinate grids for the surface plot
         Y, X = np.mgrid[: tensor_np.shape[0], : tensor_np.shape[1]]
 
-        # Create the surface plot
-        surf = ax.plot_surface(X, Y, tensor_np, cmap="viridis", linewidth=0.5, antialiased=True)
+        # Check if data is constant
+        unique_vals = np.unique(tensor_np[np.isfinite(tensor_np)])
+        n_unique = len(unique_vals)
 
-        # Add a color bar
-        plt.colorbar(surf, ax=ax, fraction=0.046, pad=0.04)
-
-        # Analyze data characteristics for optimal viewing angle
-        aspect_ratio = tensor_np.shape[1] / tensor_np.shape[0]
-        value_range = (
-            np.ptp(tensor_np[np.isfinite(tensor_np)]) if np.any(np.isfinite(tensor_np)) else 1
-        )
-        data_aspect = value_range / max(tensor_np.shape)
-
-        # Adjust the view angle based on data characteristics
-        if aspect_ratio > 2 or aspect_ratio < 0.5:
-            # For very rectangular data, view from the longer side
-            elev = 20
-            azim = 45 if aspect_ratio > 1 else -45
+        if n_unique <= 1:
+            # Handle constant data case
+            logger.debug("Constant data detected, creating flat surface")
+            if n_unique == 1:
+                val = unique_vals[0]
+                # Create a flat surface at the constant value
+                surf = ax.plot_surface(
+                    X,
+                    Y,
+                    np.full_like(tensor_np, val),
+                    cmap="viridis",
+                    linewidth=0.5,
+                    antialiased=True,
+                )
+                # Add text annotation above the surface
+                ax.text(
+                    tensor_np.shape[1] / 2,
+                    tensor_np.shape[0] / 2,
+                    val,
+                    f"Constant Value: {val}",
+                    fontsize=8,
+                    ha="center",
+                    va="bottom",
+                )
+                # Set z limits with a small range around the constant value
+                margin = abs(val) * 0.1 if val != 0 else 0.1
+                ax.set_zlim(val - margin, val + margin)
+            else:
+                # No valid data case
+                ax.text(
+                    0.5, 0.5, 0.5, "No Valid Data", ha="center", va="center", transform=ax.transAxes
+                )
+                ax.set_zlim(-1, 1)  # Set default z limits
         else:
-            # For more square data, use standard angles
-            elev = 30
-            azim = -60
+            # Create the surface plot
+            surf = ax.plot_surface(X, Y, tensor_np, cmap="viridis", linewidth=0.5, antialiased=True)
 
-        ax.view_init(elev=elev, azim=azim)
+            # Add a color bar
+            plt.colorbar(surf, ax=ax, fraction=0.046, pad=0.04)
 
-        # Set reasonable axis limits
-        ax.set_zlim(np.nanmin(tensor_np), np.nanmax(tensor_np))
+            # Analyze data characteristics for optimal viewing angle
+            aspect_ratio = tensor_np.shape[1] / tensor_np.shape[0]
+            value_range = np.ptp(tensor_np[np.isfinite(tensor_np)])
+
+            # Adjust the view angle based on data characteristics
+            if aspect_ratio > 2 or aspect_ratio < 0.5:
+                # For very rectangular data, view from the longer side
+                elev = 20
+                azim = 45 if aspect_ratio > 1 else -45
+            else:
+                # For more square data, use standard angles
+                elev = 30
+                azim = -60
+
+            ax.view_init(elev=elev, azim=azim)
+
+            # Set reasonable z limits with a margin
+            z_min, z_max = np.nanmin(tensor_np), np.nanmax(tensor_np)
+            if z_min == z_max:  # Handle near-constant data
+                margin = abs(z_min) * 0.1 if z_min != 0 else 0.1
+                ax.set_zlim(z_min - margin, z_max + margin)
+            else:
+                margin = (z_max - z_min) * 0.1
+                ax.set_zlim(z_min - margin, z_max + margin)
 
         # Set plot labels and title
         ax.set_title("3D Surface Plot")

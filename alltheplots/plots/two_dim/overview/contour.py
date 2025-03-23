@@ -24,33 +24,54 @@ def create_contour_plot(tensor_np, ax=None):
         # Create coordinate grids for the contour plot
         Y, X = np.mgrid[: tensor_np.shape[0], : tensor_np.shape[1]]
 
-        # Determine appropriate number of levels based on data characteristics
+        # Check if data is constant
         unique_vals = np.unique(tensor_np[np.isfinite(tensor_np)])
         n_unique = len(unique_vals)
 
-        if n_unique < 5:
-            levels = unique_vals  # Use actual values for discrete data
-            logger.debug(f"Using {n_unique} discrete levels for contour plot")
-        else:
-            # For continuous data, use Freedman-Diaconis rule to estimate bin count
-            iqr = np.percentile(tensor_np[np.isfinite(tensor_np)], 75) - np.percentile(
-                tensor_np[np.isfinite(tensor_np)], 25
+        if n_unique <= 1:
+            # Handle constant data case
+            logger.debug("Constant data detected, showing text instead of contour plot")
+            ax.text(
+                0.5,
+                0.5,
+                f"Constant Value: {unique_vals[0] if n_unique > 0 else 'NaN'}",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
             )
-            bin_width = 2 * iqr / (len(tensor_np.flatten()) ** (1 / 3)) if iqr > 0 else 1
-            n_levels = max(5, min(20, int((np.max(tensor_np) - np.min(tensor_np)) / bin_width)))
-            levels = n_levels
-            logger.debug(f"Using {n_levels} levels for contour plot")
+            # Add a subtle background color to indicate the constant value
+            if n_unique > 0:
+                ax.imshow(
+                    [[unique_vals[0]]],
+                    extent=[0, tensor_np.shape[1], 0, tensor_np.shape[0]],
+                    cmap="viridis",
+                    alpha=0.2,
+                )
+        else:
+            # Determine appropriate number of levels based on data characteristics
+            if n_unique < 5:
+                levels = unique_vals  # Use actual values for discrete data
+                logger.debug(f"Using {n_unique} discrete levels for contour plot")
+            else:
+                # For continuous data, use Freedman-Diaconis rule to estimate bin count
+                iqr = np.percentile(tensor_np[np.isfinite(tensor_np)], 75) - np.percentile(
+                    tensor_np[np.isfinite(tensor_np)], 25
+                )
+                bin_width = 2 * iqr / (len(tensor_np.flatten()) ** (1 / 3)) if iqr > 0 else 1
+                n_levels = max(5, min(20, int((np.max(tensor_np) - np.min(tensor_np)) / bin_width)))
+                levels = n_levels
+                logger.debug(f"Using {n_levels} levels for contour plot")
 
-        # Create filled contour plot with colorbar
-        contour = ax.contourf(X, Y, tensor_np, levels=levels, cmap="viridis")
-        plt.colorbar(contour, ax=ax, fraction=0.046, pad=0.04)
+            # Create filled contour plot with colorbar
+            contour = ax.contourf(X, Y, tensor_np, levels=levels, cmap="viridis")
+            plt.colorbar(contour, ax=ax, fraction=0.046, pad=0.04)
 
-        # Add contour lines with labels for better readability
-        contour_lines = ax.contour(
-            X, Y, tensor_np, levels=levels, colors="white", linewidths=0.5, alpha=0.5
-        )
-        if n_unique < 10:  # Only add labels if there aren't too many levels
-            ax.clabel(contour_lines, inline=True, fontsize=8, fmt="%.2f")
+            # Add contour lines with labels for better readability
+            contour_lines = ax.contour(
+                X, Y, tensor_np, levels=levels, colors="white", linewidths=0.5, alpha=0.5
+            )
+            if n_unique < 10:  # Only add labels if there aren't too many levels
+                ax.clabel(contour_lines, inline=True, fontsize=8, fmt="%.2f")
 
         # Set plot labels and title
         ax.set_title("Contour Plot")
