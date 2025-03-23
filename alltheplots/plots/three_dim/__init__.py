@@ -3,14 +3,13 @@ from .slice_views import (
     create_xz_slice_plot,
     create_yz_slice_plot,
 )
-from .projections import (
-    create_max_intensity_plot,
-    create_mean_intensity_plot,
-    create_std_intensity_plot,
-)
 from .distribution import (
     create_hist_kde_plot_3d,
     create_cdf_plot_3d,
+    create_2d_projection_plot,
+)
+from .visualization import (
+    create_3d_surface_plot,
 )
 
 __all__ = [
@@ -18,11 +17,10 @@ __all__ = [
     "create_xy_slice_plot",
     "create_xz_slice_plot",
     "create_yz_slice_plot",
-    # Projections
-    "create_max_intensity_plot",
-    "create_mean_intensity_plot",
-    "create_std_intensity_plot",
     # Distribution analysis
     "create_hist_kde_plot_3d",
     "create_cdf_plot_3d",
+    "create_2d_projection_plot",
+    # 3D visualization
+    "create_3d_surface_plot",
 ]

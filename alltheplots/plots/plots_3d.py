@@ -8,14 +8,13 @@ from .three_dim.slice_views import (
     create_xz_slice_plot,
     create_yz_slice_plot,
 )
-from .three_dim.projections import (
-    create_max_intensity_plot,
-    create_mean_intensity_plot,
-    create_std_intensity_plot,
-)
 from .three_dim.distribution import (
     create_hist_kde_plot_3d,
     create_cdf_plot_3d,
+    create_2d_projection_plot,
+)
+from .three_dim.visualization import (
+    create_3d_surface_plot,
 )
 
 
@@ -28,14 +27,14 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
     - Central XZ slice
     - Central YZ slice
 
-    Column 2 (Projections):
-    - Maximum intensity projection (XY)
-    - Mean intensity projection (XY)
-    - Standard deviation projection (XY)
+    Column 2 (3D Visualizations):
+    - 3D surface plot with averaging along X axis
+    - 3D surface plot with averaging along Y axis
+    - 3D surface plot with averaging along Z axis
 
     Column 3 (Distribution Analysis):
+    - 2D projection (t-SNE) showing structure
     - Histogram of all voxel values with KDE
-    - KDE over flattened array
     - CDF of voxel intensities
 
     Parameters:
@@ -61,14 +60,17 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
 
     # Create a 3x3 grid of subplots
     fig = plt.figure(figsize=(9, 8))
-    gs = fig.add_gridspec(3, 3, hspace=0.75, wspace=0.75)
+    gs = fig.add_gridspec(3, 3, hspace=0.6, wspace=0.6)
 
     # Create all subplots
     axes = []
     for i in range(3):
         row = []
         for j in range(3):
-            ax = fig.add_subplot(gs[i, j])
+            if j == 1:  # For column 2, we need 3D axes
+                ax = fig.add_subplot(gs[i, j], projection="3d")
+            else:
+                ax = fig.add_subplot(gs[i, j])
             row.append(ax)
         axes.append(row)
 
@@ -78,15 +80,21 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
         _, im2 = create_xz_slice_plot(tensor_np, ax=axes[1][0], add_colorbar=False)
         _, im3 = create_yz_slice_plot(tensor_np, ax=axes[2][0], add_colorbar=False)
 
-        # Column 2: Projections
-        _, im4 = create_max_intensity_plot(tensor_np, ax=axes[0][1], add_colorbar=False)
-        _, im5 = create_mean_intensity_plot(tensor_np, ax=axes[1][1], add_colorbar=False)
-        _, im6 = create_std_intensity_plot(tensor_np, ax=axes[2][1], add_colorbar=False)
+        # Column 2: 3D Visualizations (Surface plots with averaging)
+        create_3d_surface_plot(
+            tensor_np, ax=axes[0][1], axis=0, view_angle=(30, -60), add_colorbar=False
+        )
+        create_3d_surface_plot(
+            tensor_np, ax=axes[1][1], axis=1, view_angle=(30, -60), add_colorbar=False
+        )
+        create_3d_surface_plot(
+            tensor_np, ax=axes[2][1], axis=2, view_angle=(30, -60), add_colorbar=False
+        )
 
         # Column 3: Distribution Analysis
-        create_hist_kde_plot_3d(tensor_np, ax=axes[0][2])
-        create_hist_kde_plot_3d(tensor_np, ax=axes[1][2])  # Will be similar but good for comparison
-        create_cdf_plot_3d(tensor_np, ax=axes[2][2])
+        create_2d_projection_plot(tensor_np, ax=axes[0][2])  # t-SNE projection
+        create_hist_kde_plot_3d(tensor_np, ax=axes[1][2])  # Histogram with KDE
+        create_cdf_plot_3d(tensor_np, ax=axes[2][2])  # CDF
 
         # Add shared colorbar on the right for the image plots
         colorbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
@@ -103,10 +111,10 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
             fontsize=12,
             fontweight="bold",
         )
-        axes[0][1].text(
+        axes[0][1].text2D(
             0.5,
             1.25,
-            "Projections",
+            "3D Visualizations",
             ha="center",
             va="center",
             transform=axes[0][1].transAxes,

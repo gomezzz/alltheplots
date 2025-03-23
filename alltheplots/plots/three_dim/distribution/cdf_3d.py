@@ -53,7 +53,7 @@ def create_cdf_plot_3d(tensor_np, ax=None):
                 )
 
         # Set plot labels and title
-        ax.set_title("Cumulative Distribution Function")
+        ax.set_title("Cumulative \n Distribution Function")
         ax.set_xlabel("Value")
         ax.set_ylabel("Cumulative Probability")
 
