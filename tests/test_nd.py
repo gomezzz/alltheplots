@@ -154,8 +154,8 @@ def test_cases_nd():
     return {
         "constant_with_spike": spike_data,
         "gradient_nd": gradient_nd,
-        "random_small_nd": np.random.randn(3, 3, 3, 3),
-        "zero_data": np.zeros((4, 4, 4, 4)),
+        "random_small_nd": np.random.randn(7, 7, 7, 7),
+        "zero_data": np.zeros((8, 8, 8, 8)),
     }
 
 
@@ -208,6 +208,53 @@ def test_simple_plot_nd(output_dir_nd):
     plot(data, filename=filepath, show=False)
     assert filename.exists(), f"Failed to create simple nD test plot at {filename}"
     logger.success(f"Successfully created simple nD test plot at {filename}")
+
+
+# Additional non-4D scenarios
+
+
+@pytest.mark.dependency(name="plot_non4d_2d_tests")
+@pytest.mark.plot_test
+def test_plot_non4d_2d(output_dir_nd):
+    """
+    Test plotting with a 2D array.
+    For UMAP, ensure that the array has at least 5 points per dimension (e.g., 10x10).
+    """
+    data = np.random.randn(10, 10)
+    filename = output_dir_nd / "non4d_2d.png"
+    filepath = str(filename.absolute())
+    logger.info(f"Testing non-4D (2D) plot to file {filepath}")
+    try:
+        plot(data, filename=filepath, dpi=100, show=False)
+        assert filename.exists(), f"Output file {filename} not created"
+        logger.success(f"Successfully created {filename}")
+        fig = plot(data, show=False)
+        assert fig is not None, "Expected plot function to return a figure object"
+    except Exception as e:
+        logger.error(f"2D plotting failed with error: {e}")
+        pytest.fail(f"2D plotting failed with error: {e}")
+
+
+@pytest.mark.dependency(name="plot_non4d_5d_tests")
+@pytest.mark.plot_test
+def test_plot_non4d_5d(output_dir_nd):
+    """
+    Test plotting with a 5D array.
+    For UMAP, ensure that each dimension has at least 5 points (e.g., shape 5x5x5x5x5).
+    """
+    data = np.random.randn(5, 5, 5, 5, 5)
+    filename = output_dir_nd / "non4d_5d.png"
+    filepath = str(filename.absolute())
+    logger.info(f"Testing non-4D (5D) plot to file {filepath}")
+    try:
+        plot(data, filename=filepath, dpi=100, show=False)
+        assert filename.exists(), f"Output file {filename} not created"
+        logger.success(f"Successfully created {filename}")
+        fig = plot(data, show=False)
+        assert fig is not None, "Expected plot function to return a figure object"
+    except Exception as e:
+        logger.error(f"5D plotting failed with error: {e}")
+        pytest.fail(f"5D plotting failed with error: {e}")
 
 
 @pytest.fixture(scope="session", autouse=True)
