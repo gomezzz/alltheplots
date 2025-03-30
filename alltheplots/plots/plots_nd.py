@@ -6,7 +6,6 @@ from ..utils.logger import logger
 # Import functions from the individual plot modules
 from .n_dim.dim_reduction import (
     create_pca_projection_plot,
-    create_tsne_projection_plot,
     create_umap_projection_plot,
 )
 from .n_dim.projection import (
@@ -27,8 +26,8 @@ def plot_nd(tensor, filename=None, dpi=100, show=True):
 
     Column 1 (Dimension Reduction):
     - PCA projection to 2D
-    - t-SNE projection to 2D
-    - UMAP projection to 2D
+    - t-SNE projection to 2D (when available)
+    - UMAP projection to 2D (when available)
 
     Column 2 (Aggregate Projections):
     - Mean projection to 2D
@@ -81,7 +80,26 @@ def plot_nd(tensor, filename=None, dpi=100, show=True):
     try:
         # --- Column 1: Dimension Reduction ---
         create_pca_projection_plot(tensor_np, ax=axes[0][0])
-        create_tsne_projection_plot(tensor_np, ax=axes[1][0])
+
+        # Try to create a t-SNE projection plot
+        try:
+            # Import dynamically to isolate potential issues
+            from .n_dim.dim_reduction import create_tsne_projection_plot
+
+            create_tsne_projection_plot(tensor_np, ax=axes[1][0])
+        except Exception as e:
+            logger.warning(f"t-SNE projection failed: {e}. Using error placeholder.")
+            axes[1][0].text(
+                0.5,
+                0.5,
+                f"t-SNE Error: {str(e)}",
+                ha="center",
+                va="center",
+                transform=axes[1][0].transAxes,
+                fontsize=8,
+            )
+            axes[1][0].set_title("t-SNE Projection (Error)")
+
         create_umap_projection_plot(tensor_np, ax=axes[2][0])
 
         # --- Column 2: Aggregate Projections ---
