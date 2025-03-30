@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from .plots_1d import plot_1d
 from .plots_2d import plot_2d
 from .plots_3d import plot_3d
+from .plots_nd import plot_nd
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 
@@ -14,6 +15,7 @@ def plot(tensor, filename=None, dpi=100, show=True):
     - 1D: Time-domain, Frequency-domain, Histogram plots in a 3×3 grid
     - 2D: Heatmap, Contour, 3D Surface, Distribution, and Cross-section plots in a 3×3 grid
     - 3D: Slice views, Projections, and Distribution analysis in a 3×3 grid
+    - nD: Dimension reduction, Projections, and Distribution analysis in a 3×3 grid
 
     Parameters:
         tensor (array-like): The input tensor to plot.
@@ -51,39 +53,6 @@ def plot(tensor, filename=None, dpi=100, show=True):
     elif len(effective_dims) == 3:  # Handle 3D case
         logger.info("Detected 3D tensor, routing to plot_3d")
         return plot_3d(tensor_np, filename=filename, dpi=dpi, show=show)
-    else:
-        logger.info(f"Detected {len(effective_dims)}D tensor, using basic plotting")
-        # For now, just use the basic plotting for higher dimensions
-        # Create a figure and axis
-        fig, ax = plt.subplots()
-        logger.debug("Created basic plot")
-
-        # Flatten and plot the tensor
-        ax.plot(tensor_np.flatten())
-        logger.debug("Plotted flattened tensor")
-
-        # Set labels and title
-        ax.set_xlabel("Index")
-        ax.set_ylabel("Value")
-        ax.set_title(f"{len(tensor_np.shape)}D Tensor Plot (Flattened)")
-
-        # Save or return the plot
-        if filename:
-            logger.info(f"Saving plot to file: {filename}")
-            try:
-                plt.savefig(filename, dpi=dpi)
-                logger.success(f"Plot saved to {filename}")
-            except Exception as e:
-                logger.error(f"Failed to save plot to {filename}: {e}")
-                raise
-            finally:
-                plt.close(fig)
-            return None
-        elif show:
-            logger.debug("Displaying plot interactively")
-            plt.show()
-            return None
-        else:
-            logger.debug("Returning figure without displaying")
-            plt.close(fig)
-            return fig
+    else:  # Handle nD case (4D and higher)
+        logger.info(f"Detected {len(effective_dims)}D tensor, routing to plot_nd")
+        return plot_nd(tensor_np, filename=filename, dpi=dpi, show=show)
