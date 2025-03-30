@@ -61,7 +61,7 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
     # Create figure and gridspec with reduced wspace
     fig = plt.figure(figsize=(9, 8))
     # Force each of the 3 columns to have the same width
-    gs = fig.add_gridspec(3, 3, width_ratios=[1, 1.25, 1.25], hspace=0.75, wspace=0.5)
+    gs = fig.add_gridspec(3, 3, width_ratios=[1, 1, 1], hspace=0.75, wspace=0.5)
 
     # Create subplots
     axes = []
@@ -137,6 +137,15 @@ def plot_3d(tensor, filename=None, dpi=100, show=True):
         logger.error(f"Failed to create one or more plots: {e}")
         plt.close(fig)
         raise
+
+    plt.subplots_adjust(
+        left=0.06,  # move subplots slightly further left
+        right=0.88,  # give more room for your colorbar on the right
+        top=0.92,
+        bottom=0.08,
+        wspace=0.3,
+        hspace=0.4,
+    )
 
     # Save or show
     if filename:

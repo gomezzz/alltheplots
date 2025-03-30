@@ -72,10 +72,9 @@ def create_3d_surface_plot(
         if add_colorbar:
             plt.colorbar(surf, ax=ax, shrink=0.7, aspect=20, pad=0.1, label="Value")
 
-        ax.set_title(title, pad=6)
-        ax.set_xlabel(xlabel, labelpad=6)
-        ax.set_ylabel(ylabel, labelpad=6)
-        ax.set_zlabel("Value", labelpad=6)
+        ax.set_title(title, pad=2)
+        ax.set_xlabel(xlabel, labelpad=2)
+        ax.set_ylabel(ylabel, labelpad=2)
 
         # Switch to orthographic projection if available (Matplotlib ≥ 3.2)
         try:
@@ -91,7 +90,7 @@ def create_3d_surface_plot(
         else:
             ax.view_init(elev=30, azim=60)
 
-        ax.set_zlabel("")
+        ax.set_zlabel("", labelpad=10)
 
         ax.text2D(
             -0.1,  # a negative X to push it left of the axis
