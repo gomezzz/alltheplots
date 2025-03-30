@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 

@@ -64,8 +64,7 @@ def create_pca_projection_plot(tensor_np, ax=None, n_components=2, sample_limit=
             # Use the first dimension for coloring
             color_values = np.arange(len(projection)) / len(projection)
 
-            # Create a scatter plot with points colored by their original position
-            scatter = ax.scatter(
+            ax.scatter(
                 projection[:, 0],
                 projection[:, 1],
                 c=color_values,  # Use color values to avoid warnings

@@ -19,7 +19,7 @@ def create_tsne_projection_plot(tensor_np, ax=None, perplexity=30, sample_limit=
     Returns:
         matplotlib.axes.Axes: The axis with the plot
     """
-    logger.debug(f"Creating t-SNE projection")
+    logger.debug("Creating t-SNE projection")
 
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 5))
@@ -82,7 +82,7 @@ def create_tsne_projection_plot(tensor_np, ax=None, perplexity=30, sample_limit=
         color_values = np.arange(len(projection)) / len(projection)
 
         # Create a scatter plot with points colored by their density
-        scatter = ax.scatter(
+        ax.scatter(
             projection[:, 0],
             projection[:, 1],
             c=color_values,  # Add color values to avoid warning

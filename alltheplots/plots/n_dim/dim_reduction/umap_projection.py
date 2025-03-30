@@ -21,18 +21,17 @@ def create_umap_projection_plot(
     Returns:
         matplotlib.axes.Axes: The axis with the plot
     """
-    logger.debug(f"Creating UMAP projection")
+    logger.debug("Creating UMAP projection")
+    # Try to import UMAP - handle gracefully if not installed
+    try:
+        from umap import UMAP
+    except ImportError:
+        raise ImportError("UMAP is not installed. Install it with 'pip install umap-learn'")
 
     if ax is None:
         _, ax = plt.subplots(figsize=(6, 5))
 
     try:
-        # Try to import UMAP - handle gracefully if not installed
-        try:
-            import umap
-            from umap import UMAP
-        except ImportError:
-            raise ImportError("UMAP is not installed. Install it with 'pip install umap-learn'")
 
         # Reshape to 2D array: (samples x features)
         tensor_shape = tensor_np.shape

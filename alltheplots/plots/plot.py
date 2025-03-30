@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from .plots_1d import plot_1d
 from .plots_2d import plot_2d
 from .plots_3d import plot_3d
