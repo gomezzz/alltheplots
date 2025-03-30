@@ -26,6 +26,7 @@
         <li><a href="#saving-plot-to-file">Saving Plot to File</a></li>
         <li><a href="#custom-theme">Using a Custom Theme</a></li>
         <li><a href="#framework-compatibility">Framework Compatibility</a></li>
+        <li><a href="#example-notebooks">Example Notebooks</a></li>
     </ul>
     <li><a href="#dependencies">Dependencies</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -43,7 +44,7 @@ The core goal of `alltheplots` is to abstract away the plotting details, letting
 - **Simple**: Single public `.plot()` function.
 - **Automatic**: Detects array dimensionality and chooses appropriate plots automatically.
 - **Flexible**: Supports numpy-like arrays from libraries such as `numpy`, `pytorch`, `TensorFlow`, `jax`, and `cupy` seamlessly.
-- **Minimal dependencies**: built on top of `seaborn`, `matplotlib`, `numpy`, and `loguru`.
+- **Minimal dependencies**: built on top of `matplotlib`, `numpy`, `scipy`, `seaborn`, `scikit-learn`, and `umap-learn`.
 
 ## Installation
 
@@ -101,13 +102,26 @@ plot(data)
 
 This approach provides more flexibility and aligns with best practices for managing plot aesthetics.
 
+### Example Notebooks
+
+For more detailed examples, check out the notebooks in the `examples/` directory:
+
+- [1D Examples](https://github.com/gomezzz/alltheplots/blob/main/examples/1D_Examples.ipynb) - Visualizing 1D arrays with time-domain, frequency-domain, and distribution plots
+- [2D Examples](https://github.com/gomezzz/alltheplots/blob/main/examples/2D_Examples.ipynb) - Visualizing 2D arrays with heatmaps, contours, and 3D surface plots
+- [3D Examples](https://github.com/gomezzz/alltheplots/blob/main/examples/3D_Examples.ipynb) - Visualizing 3D arrays with slice views, projections, and distribution analysis
+- [nD Examples](https://github.com/gomezzz/alltheplots/blob/main/examples/nD_Examples.ipynb) - Visualizing high-dimensional arrays with dimensionality reduction techniques
+
+These notebooks provide comprehensive examples of the various visualization capabilities and can help you understand how to best use the library for your specific data.
+
 ## Dependencies
 
-- `seaborn`
-- `matplotlib`
-- `loguru`
-- `numpy`
-- `scipy`
+- `matplotlib` - Core plotting library
+- `numpy` - Array manipulation
+- `scipy` - Scientific computing
+- `seaborn` - Statistical data visualization
+- `scikit-learn` - Machine learning for dimensionality reduction
+- `umap-learn` - UMAP dimensionality reduction for high-dimensional data
+- `loguru` - Logging
 
 ## Contributing
 
