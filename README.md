@@ -1,10 +1,10 @@
-
 ## alltheplots - Quick & Automatic Plots for All Array Dimensionalities
 
 ![GitHub](https://img.shields.io/github/license/gomezzz/alltheplots?style=flat-square)
 ![GitHub contributors](https://img.shields.io/github/contributors/gomezzz/alltheplots?style=flat-square)
 ![GitHub issues](https://img.shields.io/github/issues/gomezzz/alltheplots?style=flat-square)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/gomezzz/alltheplots?style=flat-square)
+![CI](https://img.shields.io/github/actions/workflow/status/gomezzz/alltheplots/automated_tests.yml?label=Tests&style=flat-square)
 
 ![Alt Text](resources/demo.gif)
 
@@ -25,6 +25,7 @@
         <li><a href="#basic-usage">Basic Usage</a></li>
         <li><a href="#saving-plot-to-file">Saving Plot to File</a></li>
         <li><a href="#custom-theme">Using a Custom Theme</a></li>
+        <li><a href="#framework-compatibility">Framework Compatibility</a></li>
     </ul>
     <li><a href="#dependencies">Dependencies</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -41,7 +42,7 @@ The core goal of `alltheplots` is to abstract away the plotting details, letting
 
 - **Simple**: Single public `.plot()` function.
 - **Automatic**: Detects array dimensionality and chooses appropriate plots automatically.
-- **Flexible**: Supports numpy-like arrays from libraries such as `numpy`, `pytorch`, `TensorFlow`, and `jax` seamlessly.
+- **Flexible**: Supports numpy-like arrays from libraries such as `numpy`, `pytorch`, `TensorFlow`, `jax`, and `cupy` seamlessly.
 - **Minimal dependencies**: built on top of `seaborn`, `matplotlib`, `numpy`, and `loguru`.
 
 ## Installation
@@ -86,20 +87,27 @@ plot(data, filename="my_plot.png", dpi=300)
 
 ### Custom Theme
 
-Change the visual style with built-in seaborn themes:
+Users are encouraged to manage the visual style externally by setting global themes in `matplotlib` or `seaborn`. For example:
 
 ```python
-plot(data, style="whitegrid")
+import seaborn as sns
+import matplotlib.pyplot as plt
+sns.set_theme(style="ticks", palette="deep")
+plt.style.use("dark_background")
+
+# Then call the plot function
+plot(data)
 ```
 
-Available themes include: `darkgrid`, `whitegrid`, `dark`, `white`, and `ticks`.
+This approach provides more flexibility and aligns with best practices for managing plot aesthetics.
 
 ## Dependencies
 
 - `seaborn`
 - `matplotlib`
 - `loguru`
-- `numpy` (internal)
+- `numpy`
+- `scipy`
 
 ## Contributing
 
