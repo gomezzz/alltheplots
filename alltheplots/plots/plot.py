@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from .plots_1d import plot_1d
+from .plots_2d import plot_2d
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 
@@ -9,7 +10,8 @@ def plot(tensor, filename=None, dpi=100, show=True):
     Plot a tensor based on its dimensionality using appropriate visualization methods.
 
     Currently supports:
-    - 1D: Time-domain, Frequency-domain, Histogram, and Histogram with log scale
+    - 1D: Time-domain, Frequency-domain, Histogram plots in a 3×3 grid
+    - 2D: Heatmap, Contour, 3D Surface, Distribution, and Cross-section plots in a 3×3 grid
 
     Parameters:
         tensor (array-like): The input tensor to plot.
@@ -41,6 +43,9 @@ def plot(tensor, filename=None, dpi=100, show=True):
     ):  # Handle 1D case (including scalars and arrays with singleton dimensions)
         logger.info("Detected 1D tensor, routing to plot_1d")
         return plot_1d(tensor_np, filename=filename, dpi=dpi, show=show)
+    elif len(effective_dims) == 2:  # Handle 2D case
+        logger.info("Detected 2D tensor, routing to plot_2d")
+        return plot_2d(tensor_np, filename=filename, dpi=dpi, show=show)
     else:
         logger.info(f"Detected {len(effective_dims)}D tensor, using basic plotting")
         # For now, just use the basic plotting for higher dimensions

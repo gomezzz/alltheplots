@@ -18,10 +18,48 @@
   - Histogram with KDE overlay (normal scale)
   - Histogram with KDE overlay (logarithmic scale)
 
-- **2D**: *(To be defined further)*
-- **3D**: *(To be defined further)*
-- **4D**: *(To be defined further)*
-- **nD**: *(To be defined further)*
+
+- **🖼️ 2D Arrays (Images / Grids)**
+
+| Domain                 | Column 1      | Column 2                 | Column 3                   |
+| ---------------------- | ------------- | ------------------------ | -------------------------- |
+| **Overview**           | Heatmap       | Contour Plot             | 3D Surface Plot            |
+| **Value Distribution** | Histogram     | KDE of pixel intensities | Histogram (log scale)      |
+| **Slicing**            | Row mean plot | Column mean plot         | Central cross-section view |
+
+---
+
+- **🧭 3D Arrays (Stacks / Volumes)**
+
+| Domain                 | Column 1                | Column 2                 | Column 3                 |
+| ---------------------- | ----------------------- | ------------------------ | ------------------------ |
+| **Slice Views**        | Central XY slice        | Central XZ slice         | Central YZ slice         |
+| **Projections**        | Max intensity (XY)      | Mean intensity (XY)      | Std. dev projection (XY) |
+| **Value Distribution** | Histogram of all values | KDE over flattened array | CDF of voxel intensities |
+
+---
+
+- **🧊 4D Arrays (Time-varying 3D / Multichannel Volumes)**
+
+| Domain             | Column 1             | Column 2                | Column 3                   |
+| ------------------ | -------------------- | ----------------------- | -------------------------- |
+| **Temporal Stats** | Mean over time (XY)  | Std. dev over time (XY) | Max diff over time (XY)    |
+| **Channel Stats**  | Mean per channel     | PCA projection (2D)     | Variance ratio per channel |
+| **Distribution**   | Histogram (all data) | Violin by time/channel  | CDF of full data           |
+
+---
+
+- **🌌 nD Arrays**
+
+| Domain                    | Column 1        | Column 2         | Column 3        |
+| ------------------------- | --------------- | ---------------- | --------------- |
+| **Dim Reduction**         | PCA to 2D       | t-SNE projection | UMAP projection |
+| **Aggregate Projections** | Mean projection | Std projection   | Max projection  |
+| **Value Distribution**    | Histogram       | KDE              | CDF             |
+
+---
+
+These layouts can evolve to best support specific use cases (e.g., scientific images, sensor grids, spatiotemporal data).
 
 ### Supported Data Types:
 
