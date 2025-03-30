@@ -21,17 +21,17 @@
 
 - **🖼️ 2D Arrays (Images / Grids)**
 
-| Domain                 | Column 1      | Column 2                 | Column 3                   |
+| Domain                 | Row 1         | Row 2                    | Row 3                      |
 | ---------------------- | ------------- | ------------------------ | -------------------------- |
 | **Overview**           | Heatmap       | Contour Plot             | 3D Surface Plot            |
 | **Value Distribution** | Histogram     | KDE of pixel intensities | Histogram (log scale)      |
-| **Slicing**            | Row mean plot | Column mean plot         | Central cross-section view |
+| **Slicing**            | Row mean plot | Row mean plot            | Central cross-section view |
 
 ---
 
 - **🧭 3D Arrays (Stacks / Volumes)**
 
-| Domain                 | Column 1                | Column 2                 | Column 3                 |
+| Domain                 | Row 1                   | Row 2                    | Row 3                    |
 | ---------------------- | ----------------------- | ------------------------ | ------------------------ |
 | **Slice Views**        | Central XY slice        | Central XZ slice         | Central YZ slice         |
 | **Projections**        | Max intensity (XY)      | Mean intensity (XY)      | Std. dev projection (XY) |
@@ -39,19 +39,9 @@
 
 ---
 
-- **🧊 4D Arrays (Time-varying 3D / Multichannel Volumes)**
-
-| Domain             | Column 1             | Column 2                | Column 3                   |
-| ------------------ | -------------------- | ----------------------- | -------------------------- |
-| **Temporal Stats** | Mean over time (XY)  | Std. dev over time (XY) | Max diff over time (XY)    |
-| **Channel Stats**  | Mean per channel     | PCA projection (2D)     | Variance ratio per channel |
-| **Distribution**   | Histogram (all data) | Violin by time/channel  | CDF of full data           |
-
----
-
 - **🌌 nD Arrays**
 
-| Domain                    | Column 1        | Column 2         | Column 3        |
+| Domain                    | Row 1           | Row 2            | Row 3           |
 | ------------------------- | --------------- | ---------------- | --------------- |
 | **Dim Reduction**         | PCA to 2D       | t-SNE projection | UMAP projection |
 | **Aggregate Projections** | Mean projection | Std projection   | Max projection  |
@@ -72,6 +62,7 @@ These layouts can evolve to best support specific use cases (e.g., scientific im
 - `seaborn`
 - `matplotlib` (transitively through seaborn)
 - `loguru`
+- `numpy`
 - Internal reliance on `numpy` for handling arrays (no direct dependency on Torch, TensorFlow, or JAX, but compatible via numpy conversion)
 
 ## 🛠️ Compatibility:
@@ -94,4 +85,3 @@ These layouts can evolve to best support specific use cases (e.g., scientific im
 - Automated testing (`pytest`) for each dimensionality.
 - Automated CI using GitHub Actions: formatting (`black`), linting (`flake8`), testing (`pytest`).
 - Deployment via PyPI (`pip`).
--
