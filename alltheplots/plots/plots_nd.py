@@ -61,7 +61,7 @@ def plot_nd(tensor, filename=None, dpi=100, show=True):
         raise
 
     # Create figure and gridspec
-    fig = plt.figure(figsize=(9, 8))
+    fig = plt.figure(figsize=(8, 8))
     # Force each of the 3 columns to have the same width
     gs = fig.add_gridspec(3, 3, width_ratios=[1, 1, 1], hspace=0.75, wspace=0.5)
 
@@ -126,7 +126,7 @@ def plot_nd(tensor, filename=None, dpi=100, show=True):
         # --- Column Headers ---
         axes[0][0].text(
             0.5,
-            1.25,
+            1.35,
             "Dimension Reduction",
             ha="center",
             va="center",
@@ -136,7 +136,7 @@ def plot_nd(tensor, filename=None, dpi=100, show=True):
         )
         axes[0][1].text(
             0.5,
-            1.25,
+            1.35,
             "Aggregate Projections",
             ha="center",
             va="center",
@@ -146,7 +146,7 @@ def plot_nd(tensor, filename=None, dpi=100, show=True):
         )
         axes[0][2].text(
             0.5,
-            1.25,
+            1.35,
             "Value Distribution",
             ha="center",
             va="center",
@@ -154,10 +154,6 @@ def plot_nd(tensor, filename=None, dpi=100, show=True):
             fontsize=12,
             fontweight="bold",
         )
-
-        # Add a title with the tensor shape information
-        shape_str = " × ".join(str(dim) for dim in tensor_np.shape)
-        fig.suptitle(f"Analysis of {shape_str} Array", fontsize=14, y=0.98)
 
     except Exception as e:
         logger.error(f"Failed to create one or more plots: {e}")
