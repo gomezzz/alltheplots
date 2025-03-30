@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
+import warnings
 from ....utils.logger import logger
 
 
@@ -24,60 +25,68 @@ def create_tsne_projection_plot(tensor_np, ax=None, perplexity=30, sample_limit=
         _, ax = plt.subplots(figsize=(6, 5))
 
     try:
-        # Reshape to 2D array: (samples x features)
-        tensor_shape = tensor_np.shape
-        reshaped_data = tensor_np.reshape(
-            -1, np.prod(tensor_shape[1:]) if len(tensor_shape) > 1 else 1
-        )
+        # Suppress scikit-learn deprecation warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="'force_all_finite' was renamed to 'ensure_all_finite'",
+                category=FutureWarning,
+            )
 
-        # Keep only finite values
-        valid_mask = np.all(np.isfinite(reshaped_data), axis=1)
-        clean_data = reshaped_data[valid_mask]
+            # Reshape to 2D array: (samples x features)
+            tensor_shape = tensor_np.shape
+            reshaped_data = tensor_np.reshape(
+                -1, np.prod(tensor_shape[1:]) if len(tensor_shape) > 1 else 1
+            )
 
-        if len(clean_data) == 0:
-            raise ValueError("No finite values in data")
+            # Keep only finite values
+            valid_mask = np.all(np.isfinite(reshaped_data), axis=1)
+            clean_data = reshaped_data[valid_mask]
 
-        # Sample points if there are too many
-        if len(clean_data) > sample_limit:
-            logger.debug(f"Sampling {sample_limit} points from {len(clean_data)} total points")
-            indices = np.random.choice(len(clean_data), sample_limit, replace=False)
-            clean_data = clean_data[indices]
+            if len(clean_data) == 0:
+                raise ValueError("No finite values in data")
 
-        # Standardize the data
-        scaler = StandardScaler()
-        scaled_data = scaler.fit_transform(clean_data)
+            # Sample points if there are too many
+            if len(clean_data) > sample_limit:
+                logger.debug(f"Sampling {sample_limit} points from {len(clean_data)} total points")
+                indices = np.random.choice(len(clean_data), sample_limit, replace=False)
+                clean_data = clean_data[indices]
 
-        # Apply t-SNE
-        # Cap perplexity to be less than n_samples - 1
-        adjusted_perplexity = min(perplexity, len(scaled_data) - 1)
-        tsne = TSNE(n_components=2, random_state=42, perplexity=adjusted_perplexity)
-        projection = tsne.fit_transform(scaled_data)
+            # Standardize the data
+            scaler = StandardScaler()
+            scaled_data = scaler.fit_transform(clean_data)
 
-        # Create a color array based on the position in the original data
-        color_values = np.arange(len(projection)) / len(projection)
+            # Apply t-SNE
+            # Cap perplexity to be less than n_samples - 1
+            adjusted_perplexity = min(perplexity, len(scaled_data) - 1)
+            tsne = TSNE(n_components=2, random_state=42, perplexity=adjusted_perplexity)
+            projection = tsne.fit_transform(scaled_data)
 
-        # Create a scatter plot with points colored by their density
-        scatter = ax.scatter(
-            projection[:, 0],
-            projection[:, 1],
-            c=color_values,  # Add color values to avoid warning
-            cmap="viridis",
-            alpha=0.7,
-            s=10,
-            edgecolors="none",
-        )
+            # Create a color array based on the position in the original data
+            color_values = np.arange(len(projection)) / len(projection)
 
-        # Set title and labels
-        ax.set_title(f"t-SNE Projection\nperplexity={adjusted_perplexity}")
-        ax.set_xlabel("t-SNE 1")
-        ax.set_ylabel("t-SNE 2")
+            # Create a scatter plot with points colored by their density
+            scatter = ax.scatter(
+                projection[:, 0],
+                projection[:, 1],
+                c=color_values,  # Add color values to avoid warning
+                cmap="viridis",
+                alpha=0.7,
+                s=10,
+                edgecolors="none",
+            )
 
-        # Remove ticks as they have no meaning in the embedded space
-        ax.set_xticks([])
-        ax.set_yticks([])
+            # Set title and labels
+            ax.set_title(f"t-SNE Projection\nperplexity={adjusted_perplexity}")
+            ax.set_xlabel("t-SNE 1")
+            ax.set_ylabel("t-SNE 2")
 
-        # Add grid
-        ax.grid(True, linestyle="--", alpha=0.3)
+            # Remove ticks as they have no meaning in the embedded space
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+            # Add grid
+            ax.grid(True, linestyle="--", alpha=0.3)
 
     except Exception as e:
         logger.error(f"Failed to create t-SNE projection: {e}")
