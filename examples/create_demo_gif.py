@@ -173,6 +173,12 @@ def create_intro_clip(duration=4.0, fps=24):
     # Calculate timing for each line
     line_duration = duration / len(lines)
 
+    # Calculate vertical spacing
+    total_lines = len(lines)
+    line_height = FONT_SIZES["intro_text"] * 1.5  # Add some spacing between lines
+    total_height = line_height * total_lines
+    start_y = (frame_size[1] - total_height) / 2  # Center vertically
+
     # Create a separate text clip for each line
     line_clips = []
     for i, line in enumerate(lines):
@@ -189,8 +195,9 @@ def create_intro_clip(duration=4.0, fps=24):
             size=(frame_size[0], None),  # Allow height to be automatic
         )
 
-        # Set position (centered horizontally, spaced vertically)
-        txt_clip = txt_clip.set_position(("center", 200 + i * 120))
+        # Set position (centered horizontally and vertically)
+        y_pos = start_y + (i * line_height)
+        txt_clip = txt_clip.set_position(("center", y_pos))
 
         # Set duration and apply fade-in
         txt_clip = txt_clip.set_start(start_time)
@@ -309,52 +316,43 @@ def loading_animation_clip(duration=1.0, fps=24):
 
     # Create a white background clip
     frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
-    bg_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
-    bg_clip = bg_clip.set_fps(fps)
 
-    # Create frames for blinking cursor animation
-    cursor_frames = []
-    blink_duration = 0.4  # Duration of each blink state
-
-    # Cursor visible frame (">>>> |")
-    visible_cursor = TextClip(
-        ">>> |",
-        font="Courier",
-        fontsize=FONT_SIZES["cursor"],
-        color="black",
-        method="caption",
-        size=(frame_size[0], None),  # Allow height to be automatic
-    )
-    visible_cursor = visible_cursor.set_position((50, 50))
-
-    # Cursor hidden frame (">>>> ")
-    hidden_cursor = TextClip(
-        ">>>  ",
-        font="Courier",
-        fontsize=FONT_SIZES["cursor"],
-        color="black",
-        method="caption",
-        size=(frame_size[0], None),  # Allow height to be automatic
-    )
-    hidden_cursor = hidden_cursor.set_position((50, 50))
-
-    # Create the animation by alternating between visible and hidden cursor
     def make_frame(t):
-        # Determine which frame to show based on time
+        # Create a white background
+        img = Image.new("RGB", frame_size, color="white")
+        draw = ImageDraw.Draw(img)
+
+        # Try to load Courier font, fallback to Arial if not available
+        try:
+            font = ImageFont.truetype("cour.ttf", FONT_SIZES["cursor"])
+        except:
+            try:
+                font = ImageFont.truetype("arial.ttf", FONT_SIZES["cursor"])
+            except:
+                font = ImageFont.load_default()
+
+        # Calculate cursor visibility based on time
+        blink_duration = 0.4
         is_cursor_visible = (int(t / blink_duration) % 2) == 0
-        if is_cursor_visible:
-            return visible_cursor.get_frame(t)
-        else:
-            return hidden_cursor.get_frame(t)
 
-    # Create the composite clip with blinking cursor
-    cursor_clip = VideoClip(make_frame, duration=duration)
+        # Draw the prompt text with or without cursor
+        text = ">>> |" if is_cursor_visible else ">>>  "
 
-    # Combine background and cursor animation
-    final_clip = CompositeVideoClip([bg_clip, cursor_clip])
-    final_clip = final_clip.set_fps(fps)
+        # Calculate vertical center position
+        text_bbox = draw.textbbox((0, 0), text, font=font)
+        text_height = text_bbox[3] - text_bbox[1]
+        y_position = (frame_size[1] - text_height) // 2
 
-    return final_clip
+        # Draw the text
+        draw.text((50, y_position), text, font=font, fill="black")
+
+        return np.array(img)
+
+    # Create the clip
+    clip = VideoClip(make_frame, duration=duration)
+    clip = clip.set_fps(fps)
+
+    return clip
 
 
 def smooth_plot_display(image_path, duration=5.0, fps=24):
@@ -652,7 +650,8 @@ final_clip.write_gif(
     output_path,
     fps=12,
     program="ffmpeg",
-    opt="nq",
-    fuzz=0,  # Reduces dithering which can cause dark borders
+    opt="optimizeplus",  # Use better color optimization
+    fuzz=1,  # Slight fuzz to prevent color banding
+    colors=256,  # Maximum colors for better quality
 )
 logger.info("Finished writing GIF file.")
