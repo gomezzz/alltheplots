@@ -2,15 +2,6 @@ import warnings
 import sys
 from loguru import logger
 
-# Configure loguru
-logger.remove()
-logger.add(
-    sys.stderr,
-    format="<green>{time:HH:mm:ss}</green>|<level>ATP-{level}</level>| <level>{message}</level>",
-    colorize=True,
-    level="INFO",
-)
-
 
 def set_log_level(level):
     """
