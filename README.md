@@ -5,6 +5,7 @@
 ![GitHub issues](https://img.shields.io/github/issues/gomezzz/alltheplots?style=flat-square)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/gomezzz/alltheplots?style=flat-square)
 ![CI](https://img.shields.io/github/actions/workflow/status/gomezzz/alltheplots/automated_tests.yml?label=Tests&style=flat-square)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/alltheplots?style=flat-square)
 
 ![Alt Text](resources/demo_full.gif)
 
