@@ -1,13 +1,9 @@
-# flake8: noqa
 import os
 import logging
 import numpy as np
-import tempfile
-import subprocess
 from moviepy.editor import (
     VideoClip,
     TextClip,
-    ImageClip,
     concatenate_videoclips,
     ColorClip,
     CompositeVideoClip,
@@ -19,9 +15,8 @@ try:
 
     if not hasattr(Image, "ANTIALIAS"):
         Image.ANTIALIAS = Image.Resampling.LANCZOS
-except Exception as e:
+except ImportError as e:
     print("Error patching PIL.Image.ANTIALIAS:", e)
-
 
 import sys
 
@@ -44,19 +39,9 @@ CODE_FONT = "Roboto Mono"  # Use a monospace font for code
 TEXT_FONT = "Roboto"  # Use a sans-serif font for text
 FONT_SIZES = {
     "intro_text": 40,  # Significantly larger
-    "code": 20,  # Significantly larger
+    "code": 16,  # Significantly larger
     "cursor": 60,  # Larger cursor for terminal
     "outro": 80,  # Significantly larger
-}
-
-# Syntax highlighting colors - Using RGB values to avoid any color issues
-CODE_COLORS = {
-    "keyword": "blue",
-    "function": "gold",
-    "comment": "green",
-    "string": "orange",
-    "number": "yellowgreen",
-    "normal": "black",
 }
 
 # ---------- Logging Configuration ----------
@@ -274,8 +259,9 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
         # Use PIL's built-in font loading
         try:
             font = ImageFont.truetype("arial.ttf", FONT_SIZES["code"])
-        except:
+        except OSError:
             # Fallback to default font if Arial not found
+            logger.warning("Arial font not found, using default font.")
             font = ImageFont.load_default()
 
         y_position = 50
@@ -325,10 +311,10 @@ def loading_animation_clip(duration=1.0, fps=24):
         # Try to load Courier font, fallback to Arial if not available
         try:
             font = ImageFont.truetype("cour.ttf", FONT_SIZES["cursor"])
-        except:
+        except OSError:
             try:
                 font = ImageFont.truetype("arial.ttf", FONT_SIZES["cursor"])
-            except:
+            except OSError:
                 font = ImageFont.load_default()
 
         # Calculate cursor visibility based on time
@@ -359,11 +345,9 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
     """Display plot smoothly: first static, then pan across subplots in a 3x3 grid."""
     logger.info(f"Creating smooth plot display for {image_path}.")
 
-    # Load the original image
-    img_clip = ImageClip(image_path)
-
-    # Get dimensions
-    w, h = img_clip.size
+    # Load the original image with PIL for better color handling
+    img_pil = Image.open(image_path).convert("RGB")
+    w, h = img_pil.size
 
     # Calculate the duration for each phase
     static_time = duration * 0.35  # Show full plot for 35% of the time
@@ -374,14 +358,10 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
 
     def make_frame(t):
         # Create white background
-        frame = np.ones((frame_size[1], frame_size[0], 3), dtype=np.uint8) * 255
+        frame = Image.new("RGB", frame_size, color="white")
 
         # First phase: static display of the full image
         if t < static_time:
-            # Resize image to fill frame while maintaining aspect ratio
-            img = img_clip.get_frame(0)
-            img_pil = Image.fromarray(img)
-
             # Calculate dimensions to fill the frame
             img_aspect = w / h
             frame_aspect = frame_size[0] / frame_size[1]
@@ -395,107 +375,85 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
                 new_height = frame_size[1]
                 new_width = int(new_height * img_aspect)
 
-            # Resize the image
+            # Resize the image with high-quality resampling
             img_resized = img_pil.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
             # Calculate position to center in frame
             x_offset = (frame_size[0] - new_width) // 2
             y_offset = (frame_size[1] - new_height) // 2
 
-            # Create a frame with the image centered
-            frame = np.ones((frame_size[1], frame_size[0], 3), dtype=np.uint8) * 255
-            img_array = np.array(img_resized)
+            # Paste the image onto the frame
+            frame.paste(img_resized, (x_offset, y_offset))
 
-            # Place the image in the frame
-            frame[y_offset : y_offset + new_height, x_offset : x_offset + new_width] = img_array
-
-            return frame
-
-        # Second phase: systematic panning across the image
-        # Calculate pan position using a smooth path
-        pan_t = (t - static_time) / pan_time
-
-        # Create a smooth path through the 3x3 grid
-        # Define the 9 grid positions (normalized 0-1)
-        grid_positions = [
-            (0.25, 0.25),  # Top-left
-            (0.5, 0.25),  # Top-center
-            (0.75, 0.25),  # Top-right
-            (0.75, 0.5),  # Middle-right
-            (0.75, 0.75),  # Bottom-right
-            (0.5, 0.75),  # Bottom-center
-            (0.25, 0.75),  # Bottom-left
-            (0.25, 0.5),  # Middle-left
-            (0.5, 0.5),  # Center
-        ]
-
-        # Find the two grid positions to interpolate between
-        num_positions = len(grid_positions)
-        idx = min(int(pan_t * num_positions), num_positions - 1)
-
-        # For the last position, just stay put
-        if idx == num_positions - 1:
-            pos = grid_positions[idx]
         else:
-            # Interpolate between the current and next position
-            t_sub = pan_t * num_positions - idx
-            pos1 = grid_positions[idx]
-            pos2 = grid_positions[(idx + 1) % num_positions]
-            pos = (pos1[0] + t_sub * (pos2[0] - pos1[0]), pos1[1] + t_sub * (pos2[1] - pos1[1]))
+            # Second phase: systematic panning across the image
+            pan_t = (t - static_time) / pan_time
 
-        # Calculate the slice of the image to show
-        # We'll show a zoomed portion (about 40% of the image)
-        zoom_factor = 0.4
+            # Create a smooth path through the 3x3 grid
+            grid_positions = [
+                (0.25, 0.25),  # Top-left
+                (0.5, 0.25),  # Top-center
+                (0.75, 0.25),  # Top-right
+                (0.75, 0.5),  # Middle-right
+                (0.75, 0.75),  # Bottom-right
+                (0.5, 0.75),  # Bottom-center
+                (0.25, 0.75),  # Bottom-left
+                (0.25, 0.5),  # Middle-left
+                (0.5, 0.5),  # Center
+            ]
 
-        # Calculate the slice position based on the current position
-        x_center = int(w * pos[0])
-        y_center = int(h * pos[1])
+            # Find current position
+            num_positions = len(grid_positions)
+            idx = min(int(pan_t * num_positions), num_positions - 1)
 
-        # Calculate slice dimensions
-        slice_w = int(w * zoom_factor)
-        slice_h = int(h * zoom_factor)
+            if idx == num_positions - 1:
+                pos = grid_positions[idx]
+            else:
+                t_sub = pan_t * num_positions - idx
+                pos1 = grid_positions[idx]
+                pos2 = grid_positions[(idx + 1) % num_positions]
+                pos = (pos1[0] + t_sub * (pos2[0] - pos1[0]), pos1[1] + t_sub * (pos2[1] - pos1[1]))
 
-        # Calculate slice boundaries with bounds checking
-        left = max(0, x_center - slice_w // 2)
-        right = min(w, x_center + slice_w // 2)
-        top = max(0, y_center - slice_h // 2)
-        bottom = min(h, y_center + slice_h // 2)
+            # Calculate the zoom window
+            zoom_factor = 0.4
+            x_center = int(w * pos[0])
+            y_center = int(h * pos[1])
+            slice_w = int(w * zoom_factor)
+            slice_h = int(h * zoom_factor)
 
-        # Extract the slice
-        img_frame = img_clip.get_frame(0)
-        slice_frame = img_frame[top:bottom, left:right]
+            # Calculate slice boundaries
+            left = max(0, x_center - slice_w // 2)
+            right = min(w, x_center + slice_w // 2)
+            top = max(0, y_center - slice_h // 2)
+            bottom = min(h, y_center + slice_h // 2)
 
-        # Resize to fill the frame while maintaining aspect ratio
-        slice_pil = Image.fromarray(slice_frame)
-        slice_aspect = slice_w / slice_h
-        frame_aspect = frame_size[0] / frame_size[1]
+            # Extract and resize the slice
+            slice_img = img_pil.crop((left, top, right, bottom))
 
-        if slice_aspect > frame_aspect:
-            # Slice is wider than frame
-            new_width = frame_size[0]
-            new_height = int(new_width / slice_aspect)
-        else:
-            # Slice is taller than frame
-            new_height = frame_size[1]
-            new_width = int(new_height * slice_aspect)
+            # Calculate resize dimensions
+            slice_aspect = (right - left) / (bottom - top)
+            frame_aspect = frame_size[0] / frame_size[1]
 
-        # Resize the slice
-        slice_resized = slice_pil.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            if slice_aspect > frame_aspect:
+                new_width = frame_size[0]
+                new_height = int(new_width / slice_aspect)
+            else:
+                new_height = frame_size[1]
+                new_width = int(new_height * slice_aspect)
 
-        # Calculate position to center in frame
-        x_offset = (frame_size[0] - new_width) // 2
-        y_offset = (frame_size[1] - new_height) // 2
+            # Resize with high-quality resampling
+            slice_resized = slice_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-        # Place the image in the frame
-        slice_array = np.array(slice_resized)
-        frame[y_offset : y_offset + new_height, x_offset : x_offset + new_width] = slice_array
+            # Center the slice in the frame
+            x_offset = (frame_size[0] - new_width) // 2
+            y_offset = (frame_size[1] - new_height) // 2
+            frame.paste(slice_resized, (x_offset, y_offset))
 
-        return frame
+        # Convert to numpy array with better color handling
+        return np.array(frame)
 
     # Create the clip
     clip = VideoClip(make_frame, duration=duration)
-
-    # Set the fps
     clip = clip.set_fps(fps)
 
     return clip
@@ -537,24 +495,19 @@ code_3d = """\
 import numpy as np
 from alltheplots import plot
 
-def gaussian_3d_mod(resolution=30, sigma=(0.5, 0.7, 0.9), 
-                    offset=(0.2, -0.1, 0.3), size=2, noise_level=0.05):
+def gaussian_3d_mod(resolution=30, sigma=(0.5, 0.7, 0.9),
+                   offset=(0.2, -0.1, 0.3), size=2, noise_level=0.05):
     # Create a 3D Gaussian density field with noise
     x = np.linspace(-size, size, resolution) + offset[0]
     y = np.linspace(-size, size, resolution) + offset[1]
     z = np.linspace(-size, size, resolution) + offset[2]
     xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
-    gauss = np.exp(-((xx**2)/(2*sigma[0]**2) + 
-                     (yy**2)/(2*sigma[1]**2) + 
-                     (zz**2)/(2*sigma[2]**2)))
+    gauss = np.exp(-((xx**2)/(2*sigma[0]**2) +
+                   (yy**2)/(2*sigma[1]**2) +
+                   (zz**2)/(2*sigma[2]**2)))
     noise = np.random.normal(scale=noise_level, size=gauss.shape)
     return gauss + noise
-
-# Create a 3D tensor
-my_3d_tensor = gaussian_3d_mod()
-
-# Plot with a single function call
-plot(my_3d_tensor)"""
+"""
 
 code_4d = """\
 import numpy as np
@@ -633,25 +586,33 @@ clips.append(outro_clip)
 # Combine all clips
 final_clip = concatenate_videoclips(clips, method="compose")
 
-# Ensure the final clip has the correct size and is properly padded with white
-# (Ensuring no black borders anywhere)
 final_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
+output_name = "demo_short" if SHORT_VERSION else "demo_full"
+logger.info(f"Final output size: {final_size}")
+
+# Ensure proper color handling
 final_clip = final_clip.resize(width=final_size[0], height=final_size[1])
 final_clip = final_clip.on_color(size=final_size, color=(255, 255, 255))
+final_clip = final_clip.set_fps(12)  # Lower FPS for better quality
 
-# Output settings
-output_fps = OUTPUT_FPS
-output_name = "demo" if not SHORT_VERSION else "demo_short"
+# Write MP4 file first
+mp4_path = f"../resources/{output_name}.mp4"
+logger.info(f"Writing MP4 file {mp4_path}")
+final_clip.write_videofile(mp4_path, fps=OUTPUT_FPS, codec="libx264", bitrate="5000k", audio=False)
 
-# Write GIF file
+# Convert MP4 to GIF using FFmpeg with high quality settings
 output_path = f"../resources/{output_name}.gif"
-logger.info(f"Writing GIF file {output_path}")
-final_clip.write_gif(
-    output_path,
-    fps=12,
-    program="ffmpeg",
-    opt="optimizeplus",  # Use better color optimization
-    fuzz=1,  # Slight fuzz to prevent color banding
-    colors=256,  # Maximum colors for better quality
+logger.info(f"Converting MP4 to GIF: {output_path}")
+
+ffmpeg_cmd = (
+    f'ffmpeg -y -i "{mp4_path}" -vf '
+    f'"fps={OUTPUT_FPS},split[s0][s1];[s0]palettegen=max_colors=256:stats_mode=full[p];[s1][p]paletteuse=dither=sierra2_4a" '
+    f'"{output_path}"'
 )
-logger.info("Finished writing GIF file.")
+
+import subprocess
+
+subprocess.run(ffmpeg_cmd, shell=True, check=True)
+# Clean up the intermediate MP4 file
+os.remove(mp4_path)
+logger.info("Successfully created GIF with improved quality")
