@@ -6,7 +6,7 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/gomezzz/alltheplots?style=flat-square)
 ![CI](https://img.shields.io/github/actions/workflow/status/gomezzz/alltheplots/automated_tests.yml?label=Tests&style=flat-square)
 
-![Alt Text](resources/demo.gif)
+![Alt Text](resources/demo_full.gif)
 
 <p align="left">
     <a href="https://github.com/gomezzz/alltheplots/issues">Report Bug</a>
@@ -78,6 +78,8 @@ data = np.random.randn(1000)
 plot(data)
 ```
 
+<img src="resources/ex1.png" width="600"/>
+
 ### Saving Plot to File
 
 You can easily save plots to file:
@@ -99,6 +101,8 @@ plt.style.use("dark_background")
 # Then call the plot function
 plot(data)
 ```
+
+<img src="resources/ex2.png" width="600"/>
 
 This approach provides more flexibility and aligns with best practices for managing plot aesthetics.
 
