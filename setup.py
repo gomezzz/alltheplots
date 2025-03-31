@@ -8,7 +8,7 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/gomezzz/alltheplots",
-    author="Pablo Gomez",
+    author="Pablo Gómez",
     author_email="contact@pablo-gomez.net",
     include_package_data=True,
     install_requires=[
