@@ -8,46 +8,41 @@
 
 ### Public Interface:
 
-- Single entry-point function: `alltheplots.plot(tensor: arraylike, filename: Optional[str] = None, dpi: Optional[int] = 300)`
+- Single entry-point function: `alltheplots.plot(tensor: arraylike, filename: Optional[str] = None, dpi: int = 100, show: bool = True)`
 
 ### Supported Dimensionalities:
 
-- **1D**: 
-  - Time-domain line plot
-  - Frequency-domain (FFT magnitude) plot
-  - Histogram with KDE overlay (normal scale)
-  - Histogram with KDE overlay (logarithmic scale)
+- **1D (Time Series, Signals, etc.):**
 
+| Domain                 | Row 1             | Row 2                | Row 3                  |
+| ---------------------- | ----------------- | -------------------- | ---------------------- |
+| **Time Domain**        | Line/scatter plot | Line/scatter (log-x) | Line/scatter (log-y)   |
+| **Frequency Domain**   | FFT Magnitude     | Autocorrelation      | Power Spectral Density |
+| **Value Distribution** | Histogram + KDE   | Violin plot          | CDF                    |
 
-- **🖼️ 2D Arrays (Images / Grids)**
+- **2D (Images, Matrices, etc.):**
 
-| Domain                 | Row 1         | Row 2                    | Row 3                      |
-| ---------------------- | ------------- | ------------------------ | -------------------------- |
-| **Overview**           | Heatmap       | Contour Plot             | 3D Surface Plot            |
-| **Value Distribution** | Histogram     | KDE of pixel intensities | Histogram (log scale)      |
-| **Slicing**            | Row mean plot | Row mean plot            | Central cross-section view |
+| Domain             | Row 1              | Row 2             | Row 3                |
+| ------------------ | ------------------ | ----------------- | -------------------- |
+| **3D Views**       | 3D Surface (Front) | 3D Surface (Side) | 3D Surface (Top)     |
+| **Distribution**   | Histogram + KDE    | Row means profile | Column means profile |
+| **Shape Analysis** | Contour plot       | 2D FFT Magnitude  | Heatmap              |
 
----
+- **3D (Volumes, Stacks, etc.):**
 
-- **🧭 3D Arrays (Stacks / Volumes)**
+| Domain                | Row 1                   | Row 2                   | Row 3                   |
+| --------------------- | ----------------------- | ----------------------- | ----------------------- |
+| **Slice Views**       | Central XY slice        | Central XZ slice        | Central YZ slice        |
+| **3D Visualizations** | 3D surface (X-axis avg) | 3D surface (Y-axis avg) | 3D surface (Z-axis avg) |
+| **Distribution**      | 2D projection (t-SNE)   | Histogram + KDE         | CDF                     |
 
-| Domain                 | Row 1                   | Row 2                    | Row 3                    |
-| ---------------------- | ----------------------- | ------------------------ | ------------------------ |
-| **Slice Views**        | Central XY slice        | Central XZ slice         | Central YZ slice         |
-| **Projections**        | Max intensity (XY)      | Mean intensity (XY)      | Std. dev projection (XY) |
-| **Value Distribution** | Histogram of all values | KDE over flattened array | CDF of voxel intensities |
+- **nD (Higher Dimensions):**
 
----
-
-- **🌌 nD Arrays**
-
-| Domain                    | Row 1           | Row 2            | Row 3           |
-| ------------------------- | --------------- | ---------------- | --------------- |
-| **Dim Reduction**         | PCA to 2D       | t-SNE projection | UMAP projection |
-| **Aggregate Projections** | Mean projection | Std projection   | Max projection  |
-| **Value Distribution**    | Histogram       | KDE              | CDF             |
-
----
+| Domain                    | Row 1           | Row 2                   | Row 3           |
+| ------------------------- | --------------- | ----------------------- | --------------- |
+| **Dimension Reduction**   | PCA projection  | t-SNE projection        | UMAP projection |
+| **Aggregate Projections** | Mean projection | Standard dev projection | Max projection  |
+| **Value Distribution**    | Histogram       | KDE                     | CDF             |
 
 These layouts can evolve to best support specific use cases (e.g., scientific images, sensor grids, spatiotemporal data).
 
@@ -55,20 +50,21 @@ These layouts can evolve to best support specific use cases (e.g., scientific im
 
 - `int`
 - `float`
-- Planned future support: `complex`
 
 ## 📌 Dependencies:
 
-- `seaborn`
-- `matplotlib` (transitively through seaborn)
-- `loguru`
-- `numpy`
-- Internal reliance on `numpy` for handling arrays (no direct dependency on Torch, TensorFlow, or JAX, but compatible via numpy conversion)
+- `matplotlib` - Core plotting library
+- `numpy` - Array manipulation
+- `scipy` - Scientific computing
+- `seaborn` - Statistical data visualization
+- `scikit-learn` - Machine learning for dimensionality reduction
+- `umap-learn` - UMAP dimensionality reduction for high-dimensional data
+- `loguru` - Logging
 
 ## 🛠️ Compatibility:
 
-- Compatible with all common array-likes (`numpy`, `torch`, `tensorflow`, `jax`) through internal conversions via `np.asarray()`.
-- Environment auto-detection for Jupyter notebooks and terminals through internal checks (`get_ipython()` detection).
+- Compatible with all common array-likes (`numpy`, `torch`, `tensorflow`, `jax`) through internal conversions via `to_numpy()` utility.
+- Environment auto-detection for Jupyter notebooks and terminals.
 
 ## 🎨 Customization Options:
 
@@ -84,4 +80,4 @@ These layouts can evolve to best support specific use cases (e.g., scientific im
 
 - Automated testing (`pytest`) for each dimensionality.
 - Automated CI using GitHub Actions: formatting (`black`), linting (`flake8`), testing (`pytest`).
-- Deployment via PyPI (`pip`).
+- Deployment via PyPI.
