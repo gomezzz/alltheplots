@@ -17,7 +17,7 @@ _to be written during release process_
 - [ ] Create PR to merge from current main into release branch
 - [ ] Write Changelog in PR and request review
 - [ ] Review the PR (if OK - merge, but DO NOT delete the branch)
-- [ ] Minimize packages in requirements.txt and conda-forge submission. Update packages in setup.py
+- [ ] Minimize packages in requirements.txt. Update packages in setup.py
 - [ ] Check unit tests -> Check all tests pass and there are tests for all important features
 - [ ] Disable loguru debug logging in release version (set default log level to WARNING)
 - [ ] Check documentation -> Check presence of documentation for all features
@@ -30,4 +30,3 @@ _to be written during release process_
 - [ ] Merge release back into main
 - [ ] Create Release on GitHub from the last commit (the one reviewed in the PR)
 - [ ] Upload to PyPI
-- [ ] Update on conda following https://conda-forge.org/docs/maintainer/updating_pkgs.html
