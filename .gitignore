@@ -172,3 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+test_notebook.ipynb
+plot_outputs
+examples/*.png

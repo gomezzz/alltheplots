@@ -1,0 +1,23 @@
+name: atp
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - black=24.8.0
+  - flake8
+  - loguru
+  - ipykernel
+  - pytest
+  - pytest-cov
+  - pytest-dependency
+  - seaborn
+  - scikit-learn
+  - numpy<=2.1.3
+  - scipy
+  - pytorch
+  - pip
+  - pip:
+    - tensorflow
+    - jax
+    - jaxlib
+    - umap-learn
