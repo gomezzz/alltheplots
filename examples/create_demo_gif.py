@@ -25,12 +25,12 @@ from alltheplots import plot
 
 # ---------- Configuration Options ----------
 # Set to True to generate a short version with fewer plots for quick iteration
-SHORT_VERSION = True
+SHORT_VERSION = False
 # Select which plots to include (only used if SHORT_VERSION is True)
 SELECTED_PLOTS = ["3d", "4d"]  # Choose from: "1d", "2d", "3d", "nd"
 
 # High-resolution settings
-HIGH_RES_SIZE = (800, 800)  # Square format for high resolution
+HIGH_RES_SIZE = (500, 500)  # Square format for high resolution
 LOW_RES_SIZE = (500, 500)  # Square format for low resolution
 OUTPUT_FPS = 24
 
