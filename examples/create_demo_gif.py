@@ -25,9 +25,9 @@ from alltheplots import plot
 
 # ---------- Configuration Options ----------
 # Set to True to generate a short version with fewer plots for quick iteration
-SHORT_VERSION = False
+SHORT_VERSION = True
 # Select which plots to include (only used if SHORT_VERSION is True)
-SELECTED_PLOTS = ["1d", "2d"]  # Choose from: "1d", "2d", "3d", "nd"
+SELECTED_PLOTS = ["3d", "4d"]  # Choose from: "1d", "2d", "3d", "nd"
 
 # High-resolution settings
 HIGH_RES_SIZE = (800, 800)  # Square format for high resolution
@@ -38,10 +38,9 @@ OUTPUT_FPS = 24
 CODE_FONT = "Roboto Mono"  # Use a monospace font for code
 TEXT_FONT = "Roboto"  # Use a sans-serif font for text
 FONT_SIZES = {
-    "intro_text": 40,  # Significantly larger
-    "code": 16,  # Significantly larger
-    "cursor": 60,  # Larger cursor for terminal
-    "outro": 80,  # Significantly larger
+    "intro_text": 60,
+    "code": 18,
+    "outro": 80,
 }
 
 # ---------- Logging Configuration ----------
@@ -153,7 +152,7 @@ def create_intro_clip(duration=3.0, fps=24):
     bg_clip = bg_clip.set_fps(fps)
 
     # The three lines of text to display one by one
-    lines = ["Plot any tensor", "one command", "no extra parameters"]
+    lines = ["Plot any tensor", "one command", "no parameters"]
 
     # Calculate timing for each line
     line_duration = duration / len(lines)
@@ -335,70 +334,88 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
             frame_aspect = frame_size[0] / frame_size[1]
 
             if img_aspect > frame_aspect:
-                # Image is wider than frame
                 new_width = frame_size[0]
                 new_height = int(new_width / img_aspect)
             else:
-                # Image is taller than frame
                 new_height = frame_size[1]
                 new_width = int(new_height * img_aspect)
 
             # Resize the image with high-quality resampling
             img_resized = img_pil.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-            # Calculate position to center in frame
+            # Center in frame
             x_offset = (frame_size[0] - new_width) // 2
             y_offset = (frame_size[1] - new_height) // 2
-
-            # Paste the image onto the frame
             frame.paste(img_resized, (x_offset, y_offset))
 
         else:
-            # Second phase: systematic panning across the image
+            # Second phase: systematic panning
             pan_t = (t - static_time) / pan_time
 
-            # Create a smooth path through the 3x3 grid with wider coverage
+            # Define grid positions with consistent boundaries
             grid_positions = [
-                (0.2, 0.2),  # Top-left (further out)
-                (0.5, 0.2),  # Top-center
-                (0.8, 0.2),  # Top-right (further out)
-                (0.8, 0.5),  # Middle-right
-                (0.8, 0.8),  # Bottom-right (further out)
-                (0.5, 0.8),  # Bottom-center
-                (0.2, 0.8),  # Bottom-left (further out)
-                (0.2, 0.5),  # Middle-left
+                (0.25, 0.25),  # Top-left
+                (0.5, 0.25),  # Top-center
+                (0.75, 0.25),  # Top-right
+                (0.75, 0.5),  # Middle-right
+                (0.75, 0.75),  # Bottom-right
+                (0.5, 0.75),  # Bottom-center
+                (0.25, 0.75),  # Bottom-left
+                (0.25, 0.5),  # Middle-left
                 (0.5, 0.5),  # Center
             ]
 
-            # Find current position
+            # Find current position with smooth interpolation
             num_positions = len(grid_positions)
             idx = min(int(pan_t * num_positions), num_positions - 1)
 
-            if idx == num_positions - 1:
-                pos = grid_positions[idx]
-            else:
+            # Smooth position interpolation
+            if idx < num_positions - 1:
                 t_sub = pan_t * num_positions - idx
                 pos1 = grid_positions[idx]
                 pos2 = grid_positions[(idx + 1) % num_positions]
-                pos = (pos1[0] + t_sub * (pos2[0] - pos1[0]), pos1[1] + t_sub * (pos2[1] - pos1[1]))
+                # Use smooth easing function
+                t_eased = 0.5 - 0.5 * np.cos(t_sub * np.pi)
+                pos = (
+                    pos1[0] + t_eased * (pos2[0] - pos1[0]),
+                    pos1[1] + t_eased * (pos2[1] - pos1[1]),
+                )
+            else:
+                pos = grid_positions[idx]
 
-            # Calculate the zoom window with slightly larger zoom
-            zoom_factor = 0.45  # Increased from 0.4 for wider view
-            x_center = int(w * pos[0])
-            y_center = int(h * pos[1])
+            # Use fixed zoom factor throughout
+            zoom_factor = 0.5
             slice_w = int(w * zoom_factor)
             slice_h = int(h * zoom_factor)
 
-            # Calculate slice boundaries
+            # Calculate slice boundaries with padding
+            x_center = int(w * pos[0])
+            y_center = int(h * pos[1])
+
+            # Ensure boundaries don't go outside image
             left = max(0, x_center - slice_w // 2)
             right = min(w, x_center + slice_w // 2)
             top = max(0, y_center - slice_h // 2)
             bottom = min(h, y_center + slice_h // 2)
 
+            # Maintain aspect ratio by adjusting slice if needed
+            if right - left != slice_w:
+                diff = slice_w - (right - left)
+                if left > 0:
+                    left = max(0, left - diff)
+                if right < w:
+                    right = min(w, right + diff)
+            if bottom - top != slice_h:
+                diff = slice_h - (bottom - top)
+                if top > 0:
+                    top = max(0, top - diff)
+                if bottom < h:
+                    bottom = min(h, bottom + diff)
+
             # Extract and resize the slice
             slice_img = img_pil.crop((left, top, right, bottom))
 
-            # Calculate resize dimensions
+            # Calculate resize dimensions while maintaining aspect ratio
             slice_aspect = (right - left) / (bottom - top)
             frame_aspect = frame_size[0] / frame_size[1]
 
@@ -409,15 +426,14 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
                 new_height = frame_size[1]
                 new_width = int(new_height * slice_aspect)
 
-            # Resize with high-quality resampling
+            # Resize with consistent high-quality resampling
             slice_resized = slice_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-            # Center the slice in the frame
+            # Center in frame
             x_offset = (frame_size[0] - new_width) // 2
             y_offset = (frame_size[1] - new_height) // 2
             frame.paste(slice_resized, (x_offset, y_offset))
 
-        # Convert to numpy array with better color handling
         return np.array(frame)
 
     # Create the clip
@@ -469,35 +485,16 @@ code_3d = """\
 import numpy as np
 from alltheplots import plot
 
-def gaussian_3d_mod(
-    resolution=30,
-    sigma=(0.5, 0.7, 0.9),
-    offset=(0.2, -0.1, 0.3),
-    size=2,
-    noise_level=0.05
-):
-    # Create a 3D Gaussian density field with noise
-    x = np.linspace(-size, size, resolution) + offset[0]
-    y = np.linspace(-size, size, resolution) + offset[1]
-    z = np.linspace(-size, size, resolution) + offset[2]
-    
-    xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
-    
-    gauss = np.exp(
-        -(
-            (xx**2)/(2*sigma[0]**2) +
-            (yy**2)/(2*sigma[1]**2) +
-            (zz**2)/(2*sigma[2]**2)
-        )
-    )
-    
-    noise = np.random.normal(
-        scale=noise_level,
-        size=gauss.shape
-    )
-    return gauss + noise
+# Create a 3D Gaussian with noise
+x = np.linspace(-2, 2, 30)
+y = np.linspace(-2, 2, 30)
+z = np.linspace(-2, 2, 30)
 
-my_3d_tensor = gaussian_3d_mod()
+xx, yy, zz = np.meshgrid(x, y, z)
+gauss = np.exp(-(xx**2 + yy**2 + zz**2)/2)
+noise = np.random.normal(0, 0.05, gauss.shape)
+
+my_3d_tensor = gauss + noise
 plot(my_3d_tensor)
 >>> |"""
 
@@ -505,49 +502,16 @@ code_4d = """\
 import numpy as np
 from alltheplots import plot
 
-def complex_topology_4d(
-    resolution=48,
-    noise_level=0.1
-):
-    # Generate a 4D composite array
-    x = np.linspace(-3, 3, resolution)
-    y = np.linspace(-3, 3, resolution)
-    z = np.linspace(-3, 3, resolution)
-    w = np.linspace(-3, 3, resolution)
-    
-    xx, yy, zz, ww = np.meshgrid(
-        x, y, z, w,
-        indexing='ij'
-    )
-    
-    g1 = np.exp(
-        -(
-            (xx+1)**2 + (yy+1)**2 +
-            (zz+1)**2 + (ww+1)**2
-        )/2.0
-    )
-    
-    g2 = np.exp(
-        -(
-            (xx-1)**2 + (yy-1)**2 +
-            (zz-1)**2 + (ww-1)**2
-        )/2.0
-    )
-    
-    sine_component = (
-        np.sin(2*xx) * np.cos(2*yy) *
-        np.sin(2*zz) * np.cos(2*ww)
-    )
-    
-    composite = g1 + g2 + 0.5 * sine_component
-    noise = np.random.normal(
-        scale=noise_level,
-        size=composite.shape
-    )
-    return composite + noise
+# Create a 4D field with interactions
+x = np.linspace(-3, 3, 48)
+coords = np.meshgrid(*[x]*4)  # 4D grid
 
-# Create a 4D tensor
-my_nd_tensor = complex_topology_4d()
+# Combine two Gaussians and wave pattern
+g1 = np.exp(-sum(c**2 for c in coords)/2)
+g2 = np.exp(-sum((c-1)**2 for c in coords)/2)
+wave = np.prod([np.sin(2*c) for c in coords])
+
+my_nd_tensor = g1 + g2 + 0.5*wave
 plot(my_nd_tensor)
 >>> |"""
 
@@ -555,8 +519,8 @@ plot(my_nd_tensor)
 segments = [
     ("1d", code_1d, "plot_1d.png", 3.5),  # Simple, so shorter duration
     ("2d", code_2d, "plot_2d.png", 3.5),  # Simple, so shorter duration
-    ("3d", code_3d, "plot_3d.png", 5.0),  # More complex, so longer duration
-    ("nd", code_4d, "plot_nd.png", 5.5),  # Most complex, so longest duration
+    ("3d", code_3d, "plot_3d.png", 4.0),  # More complex, so longer duration
+    ("nd", code_4d, "plot_nd.png", 4.0),  # Most complex, so longest duration
 ]
 
 # Filter segments if using SHORT_VERSION
@@ -567,7 +531,7 @@ if SHORT_VERSION:
 clips = []
 
 # Adjust intro duration
-intro_clip = create_intro_clip(duration=2.5)
+intro_clip = create_intro_clip(duration=1.5)
 clips.append(intro_clip)
 
 # Process each segment
