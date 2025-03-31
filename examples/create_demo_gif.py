@@ -143,7 +143,7 @@ def test_single_text_clip():
         raise
 
 
-def create_intro_clip(duration=4.0, fps=24):
+def create_intro_clip(duration=3.0, fps=24):
     """Create an intro animation with the slogan text appearing line by line."""
     logger.info("Creating intro clip.")
 
@@ -153,7 +153,7 @@ def create_intro_clip(duration=4.0, fps=24):
     bg_clip = bg_clip.set_fps(fps)
 
     # The three lines of text to display one by one
-    lines = ["Plot any tensor", "one command", "0 extra parameters"]
+    lines = ["Plot any tensor", "one command", "no extra parameters"]
 
     # Calculate timing for each line
     line_duration = duration / len(lines)
@@ -231,7 +231,7 @@ def create_outro_clip(duration=2.5, fps=24):
 
 
 def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment_type=""):
-    """Create an animated code display with line-by-line animation."""
+    """Create an animated code display with cursor."""
     logger.info(f"Creating code display clip for {segment_type}")
 
     # Create a white background clip
@@ -239,7 +239,7 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
     bg_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
     bg_clip = bg_clip.set_fps(fps)
 
-    # Remove 'import numpy as np' to save time as requested
+    # Remove 'import numpy as np' to save time
     code_lines = code_text.split("\n")
     filtered_code_lines = []
     for line in code_lines:
@@ -256,18 +256,15 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
         img = Image.new("RGB", frame_size, color="white")
         draw = ImageDraw.Draw(img)
 
-        # Use PIL's built-in font loading
         try:
             font = ImageFont.truetype("arial.ttf", FONT_SIZES["code"])
         except OSError:
-            # Fallback to default font if Arial not found
-            logger.warning("Arial font not found, using default font.")
             font = ImageFont.load_default()
 
         y_position = 50
         line_spacing = FONT_SIZES["code"] * 1.5
 
-        # Calculate which lines should be visible based on time
+        # Calculate visible lines based on time
         current_line_idx = int(t / line_time)
 
         # Draw each visible line
@@ -279,6 +276,12 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
                 alpha = min(255, int(255 * (t - line_start_time) / fade_duration))
                 alpha = max(0, alpha)
 
+                # Handle cursor blinking for the last line
+                if i == len(code_lines) - 1 and line.strip() == ">>> |":  # aligned with 'if'
+                    blink_duration = 0.4
+                    is_cursor_visible = (int(t / blink_duration) % 2) == 0
+                    line = ">>> |" if is_cursor_visible else ">>>  "
+
                 # Draw the text with calculated alpha
                 draw.text(
                     (50, y_position + i * line_spacing),
@@ -289,7 +292,7 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
 
         return np.array(img)
 
-    # Create the clip from the frame-making function
+    # Create the clip
     txt_clip = VideoClip(make_frame, duration=duration)
     txt_clip = txt_clip.set_fps(fps)
 
@@ -475,63 +478,113 @@ import numpy as np
 from alltheplots import plot
 
 # Create a 1D array with parabola and noise
-my_1D_tensor = np.linspace(-10, 10, 300)**2 + np.random.normal(0, 10, 300)
+x = np.linspace(-10, 10, 300)
+noise = np.random.normal(0, 10, 300)
+my_1D_tensor = x**2 + noise
 
 # Plot with a single function call
-plot(my_1D_tensor)"""
+plot(my_1D_tensor)
+>>> |"""
 
 code_2d = """\
 import numpy as np
 from alltheplots import plot
 
 # Create a 2D sine wave pattern
-my_2D_tensor = np.sin(np.linspace(0, 4*np.pi, 100).reshape(10, 10) +
-                      np.cos(np.linspace(0, 4*np.pi, 100).reshape(10, 10)))
+x = np.linspace(0, 4*np.pi, 100)
+pattern = x.reshape(10, 10)
+my_2D_tensor = np.sin(pattern +
+                    np.cos(pattern))
 
 # Plot with a single function call
-plot(my_2D_tensor)"""
+plot(my_2D_tensor)
+>>> |"""
 
 code_3d = """\
 import numpy as np
 from alltheplots import plot
 
-def gaussian_3d_mod(resolution=30, sigma=(0.5, 0.7, 0.9),
-                   offset=(0.2, -0.1, 0.3), size=2, noise_level=0.05):
+def gaussian_3d_mod(
+    resolution=30,
+    sigma=(0.5, 0.7, 0.9),
+    offset=(0.2, -0.1, 0.3),
+    size=2,
+    noise_level=0.05
+):
     # Create a 3D Gaussian density field with noise
     x = np.linspace(-size, size, resolution) + offset[0]
     y = np.linspace(-size, size, resolution) + offset[1]
     z = np.linspace(-size, size, resolution) + offset[2]
+    
     xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
-    gauss = np.exp(-((xx**2)/(2*sigma[0]**2) +
-                   (yy**2)/(2*sigma[1]**2) +
-                   (zz**2)/(2*sigma[2]**2)))
-    noise = np.random.normal(scale=noise_level, size=gauss.shape)
+    
+    gauss = np.exp(
+        -(
+            (xx**2)/(2*sigma[0]**2) +
+            (yy**2)/(2*sigma[1]**2) +
+            (zz**2)/(2*sigma[2]**2)
+        )
+    )
+    
+    noise = np.random.normal(
+        scale=noise_level,
+        size=gauss.shape
+    )
     return gauss + noise
-"""
+
+my_3d_tensor = gaussian_3d_mod()
+plot(my_3d_tensor)
+>>> |"""
 
 code_4d = """\
 import numpy as np
 from alltheplots import plot
 
-def complex_topology_4d(resolution=48, noise_level=0.1):
-    # Generate a 4D composite array with non-uniform topology
+def complex_topology_4d(
+    resolution=48,
+    noise_level=0.1
+):
+    # Generate a 4D composite array
     x = np.linspace(-3, 3, resolution)
     y = np.linspace(-3, 3, resolution)
     z = np.linspace(-3, 3, resolution)
     w = np.linspace(-3, 3, resolution)
-    xx, yy, zz, ww = np.meshgrid(x, y, z, w, indexing='ij')
-    g1 = np.exp(-(((xx+1)**2 + (yy+1)**2 + (zz+1)**2 + (ww+1)**2)/2.0))
-    g2 = np.exp(-(((xx-1)**2 + (yy-1)**2 + (zz-1)**2 + (ww-1)**2)/2.0))
-    sine_component = np.sin(2*xx) * np.cos(2*yy) * np.sin(2*zz) * np.cos(2*ww)
+    
+    xx, yy, zz, ww = np.meshgrid(
+        x, y, z, w,
+        indexing='ij'
+    )
+    
+    g1 = np.exp(
+        -(
+            (xx+1)**2 + (yy+1)**2 +
+            (zz+1)**2 + (ww+1)**2
+        )/2.0
+    )
+    
+    g2 = np.exp(
+        -(
+            (xx-1)**2 + (yy-1)**2 +
+            (zz-1)**2 + (ww-1)**2
+        )/2.0
+    )
+    
+    sine_component = (
+        np.sin(2*xx) * np.cos(2*yy) *
+        np.sin(2*zz) * np.cos(2*ww)
+    )
+    
     composite = g1 + g2 + 0.5 * sine_component
-    composite += np.random.normal(scale=noise_level, size=composite.shape)
-    return composite
+    noise = np.random.normal(
+        scale=noise_level,
+        size=composite.shape
+    )
+    return composite + noise
 
 # Create a 4D tensor
 my_nd_tensor = complex_topology_4d()
-
-# Plot with a single function call
-plot(my_nd_tensor)"""
+plot(my_nd_tensor)
+>>> |"""
 
 # List of tuples: (code snippet, corresponding output image file, duration for code display)
 segments = [
@@ -554,18 +607,15 @@ clips.append(intro_clip)
 
 # Process each segment
 for plot_type, code_text, image_file, code_duration in segments:
-    logger.info(f"Processing segment {plot_type} with output image: {image_file}")
+    logger.info(f"Processing segment {plot_type} with output: {image_file}")
 
-    # Code display with line-by-line animation
+    # Code display with cursor animation
     code_clip = code_display_clip_with_highlighting(
         code_text, duration=code_duration, fps=OUTPUT_FPS, segment_type=plot_type
     )
 
-    # Loading animation
-    loading_clip = loading_animation_clip(duration=1.0)
-
     # Plot display with pan effect
-    plot_clip = smooth_plot_display(image_file, duration=5.0)
+    plot_clip = smooth_plot_display(image_file, duration=6.0)
 
     # Short pause between segments (white background)
     pause = ColorClip(
@@ -575,7 +625,7 @@ for plot_type, code_text, image_file, code_duration in segments:
     )
 
     # Combine clips for this segment
-    segment_clips = [code_clip, loading_clip, plot_clip, pause]
+    segment_clips = [code_clip, plot_clip, pause]
     segment_clip = concatenate_videoclips(segment_clips, method="compose")
     clips.append(segment_clip)
 
