@@ -2,7 +2,7 @@ import sys
 
 from loguru import logger
 
-from .plots.plot import plot
+from .plots import plot
 from .utils.logger import set_log_level
 
 
