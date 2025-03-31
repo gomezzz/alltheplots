@@ -1,6 +1,9 @@
+# flake8: noqa
 import os
 import logging
 import numpy as np
+import tempfile
+import subprocess
 from moviepy.editor import (
     VideoClip,
     TextClip,
@@ -12,7 +15,7 @@ from moviepy.editor import (
 from moviepy.config import change_settings
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageDraw, ImageFont
 
     if not hasattr(Image, "ANTIALIAS"):
         Image.ANTIALIAS = Image.Resampling.LANCZOS
@@ -37,20 +40,23 @@ LOW_RES_SIZE = (500, 500)  # Square format for low resolution
 OUTPUT_FPS = 24
 
 # Font configuration
-# Use system fonts with backup options
-CODE_FONT = None  # Let TextClip use default monospace
-TEXT_FONT = None  # Let TextClip use default font
-FONT_SIZES = {"intro_title": 50, "intro_text": 40, "code_title": 45, "code": 22, "outro": 60}
+CODE_FONT = "Roboto Mono"  # Use a monospace font for code
+TEXT_FONT = "Roboto"  # Use a sans-serif font for text
+FONT_SIZES = {
+    "intro_text": 40,  # Significantly larger
+    "code": 20,  # Significantly larger
+    "cursor": 60,  # Larger cursor for terminal
+    "outro": 80,  # Significantly larger
+}
 
-# Syntax highlighting colors (based on VSCode Dark+)
+# Syntax highlighting colors - Using RGB values to avoid any color issues
 CODE_COLORS = {
-    "keyword": "#569CD6",  # blue
-    "function": "#DCDCAA",  # yellow
-    "comment": "#6A9955",  # green
-    "string": "#CE9178",  # orange
-    "number": "#B5CEA8",  # light green
-    "variable": "#9CDCFE",  # light blue
-    "normal": "#D4D4D4",  # light gray (default text)
+    "keyword": "blue",
+    "function": "gold",
+    "comment": "green",
+    "string": "orange",
+    "number": "yellowgreen",
+    "normal": "black",
 }
 
 # ---------- Logging Configuration ----------
@@ -127,14 +133,39 @@ if not os.path.exists("plot_nd.png"):
 # ---------- Helper Functions for Video Generation ----------
 
 
-def create_intro_clip(duration=4.0, fps=24, bg_color="white"):
+def test_single_text_clip():
+    """Test function to create a single text clip with code content."""
+    logger.info("Testing single text clip creation")
+    frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
+
+    # Try with a simple code line
+    test_line = "my_1D_tensor = np.linspace(-10, 10, 300)"
+
+    try:
+        # Use exact same configuration as intro text which works
+        txt_clip = TextClip(
+            test_line,
+            font="Arial",
+            fontsize=FONT_SIZES["intro_text"],
+            color="black",
+            method="caption",
+            size=(frame_size[0], None),
+        )
+        logger.info("Successfully created text clip")
+        return txt_clip
+    except Exception as e:
+        logger.error(f"Failed to create text clip: {e}")
+        raise
+
+
+def create_intro_clip(duration=4.0, fps=24):
     """Create an intro animation with the slogan text appearing line by line."""
     logger.info("Creating intro clip.")
 
-    # First create a simple clip with white background to get dimensions
+    # Create a white background clip
     frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
-    base_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
-    base_clip = base_clip.set_fps(fps)
+    bg_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
+    bg_clip = bg_clip.set_fps(fps)
 
     # The three lines of text to display one by one
     lines = ["Plot any tensor", "one command", "0 extra parameters"]
@@ -142,117 +173,79 @@ def create_intro_clip(duration=4.0, fps=24, bg_color="white"):
     # Calculate timing for each line
     line_duration = duration / len(lines)
 
-    # Create a clip for each line with proper timing
+    # Create a separate text clip for each line
     line_clips = []
     for i, line in enumerate(lines):
-        # Create a TextClip for this line
-        line_clip = TextClip(
+        # Calculate start time and duration for this line
+        start_time = i * line_duration
+
+        # Create text clip with caption method
+        txt_clip = TextClip(
             line,
+            font="Arial",
             fontsize=FONT_SIZES["intro_text"],
             color="black",
-            method="caption",  # Use simpler caption method
-            align="center",
-            size=frame_size,
+            method="caption",
+            size=(frame_size[0], None),  # Allow height to be automatic
         )
 
-        # Set position to center but with appropriate vertical offset
-        vertical_position = (
-            frame_size[1] // 2
-            - FONT_SIZES["intro_text"] * (len(lines) - 1)
-            + i * FONT_SIZES["intro_text"] * 2
-        )
-        line_clip = line_clip.set_position(("center", vertical_position))
+        # Set position (centered horizontally, spaced vertically)
+        txt_clip = txt_clip.set_position(("center", 200 + i * 120))
 
-        # Set start time and duration with fade-in effect
-        start_time = i * line_duration
-        line_clip = line_clip.set_start(start_time)
-        line_clip = line_clip.set_duration(duration - start_time)
+        # Set duration and apply fade-in
+        txt_clip = txt_clip.set_start(start_time)
+        txt_clip = txt_clip.set_duration(duration - start_time)
+        txt_clip = txt_clip.crossfadein(line_duration * 0.3)
 
-        # Add fade-in effect
-        line_clip = line_clip.crossfadein(line_duration * 0.3)
+        line_clips.append(txt_clip)
 
-        line_clips.append(line_clip)
+    # Combine background and text clips
+    final_clip = CompositeVideoClip([bg_clip] + line_clips)
+    final_clip = final_clip.set_duration(duration)
 
-    # Composite all line clips over the base white clip
-    final_clip = CompositeVideoClip([base_clip] + line_clips)
     return final_clip
 
 
-def create_outro_clip(duration=2.5, fps=24, bg_color="white"):
-    """Create an outro animation with the package name in italic style."""
+def create_outro_clip(duration=2.5, fps=24):
+    """Create an outro animation with the package name in plain style."""
     logger.info("Creating outro clip.")
 
-    # Create a white background clip first
+    # Create a white background clip
     frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
-    base_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
-    base_clip = base_clip.set_fps(fps)
+    bg_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
+    bg_clip = bg_clip.set_fps(fps)
 
-    # Create the outro text - just use plain text instead of HTML markup
-    # We'll use a slant effect with positioning to simulate italic
-    text_clip = TextClip(
+    # Create text clip for "alltheplots" using caption method
+    txt_clip = TextClip(
         "alltheplots",
+        font="Arial",
         fontsize=FONT_SIZES["outro"],
         color="black",
-        method="caption",  # Use simpler caption method
-        align="center",
-        size=frame_size,
+        method="caption",
+        size=(frame_size[0], None),  # Allow height to be automatic
     )
 
     # Center the text
-    text_clip = text_clip.set_position("center")
+    txt_clip = txt_clip.set_position("center")
 
-    # Set duration and add fade-in effect
-    text_clip = text_clip.set_duration(duration)
-    text_clip = text_clip.crossfadein(duration * 0.4)
+    # Add fade-in effect
+    txt_clip = txt_clip.set_duration(duration)
+    txt_clip = txt_clip.crossfadein(duration * 0.4)
 
-    # Composite the clips
-    final_clip = CompositeVideoClip([base_clip, text_clip])
-    return final_clip
+    # Combine background and text
+    final_clip = CompositeVideoClip([bg_clip, txt_clip])
 
-
-def create_title_clip(title_text, duration=1.5, fps=24):
-    """Create a title clip for each code segment."""
-    logger.info(f"Creating title clip: {title_text}")
-
-    # Format the title text
-    formatted_title = f"{title_text.upper()} Plotting"
-
-    # Create a white background clip first
-    frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
-    base_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
-    base_clip = base_clip.set_fps(fps)
-
-    # Create the title text as a separate clip
-    title_clip = TextClip(
-        formatted_title,
-        fontsize=FONT_SIZES["code_title"],
-        color="black",
-        method="caption",
-        align="center",
-        size=frame_size,
-    )
-
-    # Center the title
-    title_clip = title_clip.set_position("center")
-
-    # Set duration and add fade effects
-    title_clip = title_clip.set_duration(duration)
-    title_clip = title_clip.crossfadein(duration * 0.3)
-    title_clip = title_clip.crossfadeout(duration * 0.3)
-
-    # Composite the clips
-    final_clip = CompositeVideoClip([base_clip, title_clip])
     return final_clip
 
 
 def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment_type=""):
-    """Create an animated code display with line-by-line animation using PIL for rendering."""
+    """Create an animated code display with line-by-line animation."""
     logger.info(f"Creating code display clip for {segment_type}")
 
-    # Create a white background clip first
+    # Create a white background clip
     frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
-    base_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
-    base_clip = base_clip.set_fps(fps)
+    bg_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
+    bg_clip = bg_clip.set_fps(fps)
 
     # Remove 'import numpy as np' to save time as requested
     code_lines = code_text.split("\n")
@@ -266,92 +259,102 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
     # Calculate timing for each line
     line_time = duration / len(code_lines)
 
-    # We'll use PIL to render text directly
     def make_frame(t):
-        from PIL import Image, ImageDraw, ImageFont
-
-        # Create a blank white image
+        # Create a white background image
         img = Image.new("RGB", frame_size, color="white")
         draw = ImageDraw.Draw(img)
 
-        # Try to load the font, with fallback to default
+        # Use PIL's built-in font loading
         try:
-            font = ImageFont.truetype("Courier", FONT_SIZES["code"])
+            font = ImageFont.truetype("arial.ttf", FONT_SIZES["code"])
         except:
-            try:
-                font = ImageFont.truetype("Arial", FONT_SIZES["code"])
-            except:
-                font = ImageFont.load_default()
+            # Fallback to default font if Arial not found
+            font = ImageFont.load_default()
 
-        # Determine which lines should be visible at time t
+        y_position = 50
+        line_spacing = FONT_SIZES["code"] * 1.5
+
+        # Calculate which lines should be visible based on time
+        current_line_idx = int(t / line_time)
+
+        # Draw each visible line
         for i, line in enumerate(code_lines):
-            line_start_time = i * line_time
+            if i <= current_line_idx:
+                # Calculate fade-in alpha
+                line_start_time = i * line_time
+                fade_duration = line_time * 0.3
+                alpha = min(255, int(255 * (t - line_start_time) / fade_duration))
+                alpha = max(0, alpha)
 
-            if t >= line_start_time:
-                # Calculate opacity for this line
-                time_since_appear = t - line_start_time
-                if time_since_appear < line_time * 0.3:  # Fade in during first 30% of line time
-                    opacity = int(255 * time_since_appear / (line_time * 0.3))
-                else:
-                    opacity = 255
+                # Draw the text with calculated alpha
+                draw.text(
+                    (50, y_position + i * line_spacing),
+                    line.replace("\t", "    ").strip(),
+                    fill=(0, 0, 0, alpha),
+                    font=font,
+                )
 
-                # Draw this line of code with calculated opacity
-                text_color = (0, 0, 0, opacity)  # Black with opacity
-                y_position = 50 + i * int(FONT_SIZES["code"] * 1.2)  # Add spacing between lines
-                draw.text((50, y_position), line, fill=text_color, font=font)
-
-        # Convert PIL Image to numpy array
         return np.array(img)
 
-    # Create the clip
-    clip = VideoClip(make_frame, duration=duration)
-    clip = clip.set_fps(fps)
+    # Create the clip from the frame-making function
+    txt_clip = VideoClip(make_frame, duration=duration)
+    txt_clip = txt_clip.set_fps(fps)
 
-    return clip
+    return txt_clip
 
 
 def loading_animation_clip(duration=1.0, fps=24):
-    """Create a simple loading animation using direct frame generation."""
-    logger.info("Creating loading animation clip.")
+    """Create a terminal-like animation with blinking cursor."""
+    logger.info("Creating cursor animation.")
 
     # Create a white background clip
     frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
+    bg_clip = ColorClip(size=frame_size, color=(255, 255, 255), duration=duration)
+    bg_clip = bg_clip.set_fps(fps)
 
-    # Use the same approach as the code display - generate frames directly
+    # Create frames for blinking cursor animation
+    cursor_frames = []
+    blink_duration = 0.4  # Duration of each blink state
+
+    # Cursor visible frame (">>>> |")
+    visible_cursor = TextClip(
+        ">>> |",
+        font="Courier",
+        fontsize=FONT_SIZES["cursor"],
+        color="black",
+        method="caption",
+        size=(frame_size[0], None),  # Allow height to be automatic
+    )
+    visible_cursor = visible_cursor.set_position((50, 50))
+
+    # Cursor hidden frame (">>>> ")
+    hidden_cursor = TextClip(
+        ">>>  ",
+        font="Courier",
+        fontsize=FONT_SIZES["cursor"],
+        color="black",
+        method="caption",
+        size=(frame_size[0], None),  # Allow height to be automatic
+    )
+    hidden_cursor = hidden_cursor.set_position((50, 50))
+
+    # Create the animation by alternating between visible and hidden cursor
     def make_frame(t):
-        from PIL import Image, ImageDraw, ImageFont
+        # Determine which frame to show based on time
+        is_cursor_visible = (int(t / blink_duration) % 2) == 0
+        if is_cursor_visible:
+            return visible_cursor.get_frame(t)
+        else:
+            return hidden_cursor.get_frame(t)
 
-        # Create a blank white image
-        img = Image.new("RGB", frame_size, color="white")
-        draw = ImageDraw.Draw(img)
+    # Create the composite clip with blinking cursor
+    cursor_clip = VideoClip(make_frame, duration=duration)
 
-        # Try to load the font, with fallback to default
-        try:
-            font = ImageFont.truetype("Courier", FONT_SIZES["code"])
-        except:
-            try:
-                font = ImageFont.truetype("Arial", FONT_SIZES["code"])
-            except:
-                font = ImageFont.load_default()
+    # Combine background and cursor animation
+    final_clip = CompositeVideoClip([bg_clip, cursor_clip])
+    final_clip = final_clip.set_fps(fps)
 
-        # Calculate the number of dots to show (0-3)
-        num_dots = int((t / duration) * 4) % 4
-        dots = "." * num_dots
-
-        # Create the loading text with variable dots
-        loading_text = f">>> Loading{dots}"
-
-        # Draw the text
-        draw.text((50, 50), loading_text, fill="black", font=font)
-
-        # Convert PIL Image to numpy array
-        return np.array(img)
-
-    # Create the clip
-    clip = VideoClip(make_frame, duration=duration)
-    clip = clip.set_fps(fps)
-
-    return clip
+    return final_clip
 
 
 def smooth_plot_display(image_path, duration=5.0, fps=24):
@@ -502,6 +505,15 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
 
 # ---------- Code Snippets for Each Example ----------
 
+# Test single text clip creation first
+logger.info("Testing text clip creation first...")
+try:
+    test_clip = test_single_text_clip()
+    logger.info("Test clip creation successful!")
+except Exception as e:
+    logger.error(f"Test clip creation failed: {e}")
+    raise
+
 code_1d = """\
 import numpy as np
 from alltheplots import plot
@@ -593,10 +605,7 @@ clips.append(intro_clip)
 for plot_type, code_text, image_file, code_duration in segments:
     logger.info(f"Processing segment {plot_type} with output image: {image_file}")
 
-    # Title clip for this segment
-    title_clip = create_title_clip(plot_type, duration=1.5)
-
-    # Code display with syntax highlighting and line-by-line animation
+    # Code display with line-by-line animation
     code_clip = code_display_clip_with_highlighting(
         code_text, duration=code_duration, fps=OUTPUT_FPS, segment_type=plot_type
     )
@@ -615,7 +624,7 @@ for plot_type, code_text, image_file, code_duration in segments:
     )
 
     # Combine clips for this segment
-    segment_clips = [title_clip, code_clip, loading_clip, plot_clip, pause]
+    segment_clips = [code_clip, loading_clip, plot_clip, pause]
     segment_clip = concatenate_videoclips(segment_clips, method="compose")
     clips.append(segment_clip)
 
