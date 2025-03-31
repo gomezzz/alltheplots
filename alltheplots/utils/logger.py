@@ -2,6 +2,7 @@ import warnings
 import sys
 from loguru import logger
 
+
 def set_log_level(level):
     """
     Set the log level for alltheplots.
