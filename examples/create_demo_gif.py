@@ -25,7 +25,7 @@ from alltheplots import plot
 
 # ---------- Configuration Options ----------
 # Set to True to generate a short version with fewer plots for quick iteration
-SHORT_VERSION = True
+SHORT_VERSION = False
 # Select which plots to include (only used if SHORT_VERSION is True)
 SELECTED_PLOTS = ["1d", "2d"]  # Choose from: "1d", "2d", "3d", "nd"
 
@@ -245,11 +245,11 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
     for line in code_lines:
         if not line.strip().startswith("import numpy as np"):
             filtered_code_lines.append(line)
-
     code_lines = filtered_code_lines
 
-    # Calculate timing for each line
-    line_time = duration / len(code_lines)
+    # Calculate timing for each line, reserving 1.5 seconds for final cursor blink
+    remaining_duration = duration - 1.5  # Reserve 1.5s for cursor blinking
+    line_time = remaining_duration / (len(code_lines) - 1)  # -1 because last line is cursor
 
     def make_frame(t):
         # Create a white background image
@@ -264,23 +264,20 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
         y_position = 50
         line_spacing = FONT_SIZES["code"] * 1.5
 
-        # Calculate visible lines based on time
-        current_line_idx = int(t / line_time)
+        # Calculate how many lines should be visible
+        if t < remaining_duration:
+            current_line_idx = int(t / line_time)
+        else:
+            current_line_idx = len(code_lines) - 1  # Show all lines
 
         # Draw each visible line
-        for i, line in enumerate(code_lines):
+        for i, line in enumerate(code_lines[:-1]):  # All lines except cursor
             if i <= current_line_idx:
                 # Calculate fade-in alpha
                 line_start_time = i * line_time
                 fade_duration = line_time * 0.3
                 alpha = min(255, int(255 * (t - line_start_time) / fade_duration))
                 alpha = max(0, alpha)
-
-                # Handle cursor blinking for the last line
-                if i == len(code_lines) - 1 and line.strip() == ">>> |":  # aligned with 'if'
-                    blink_duration = 0.4
-                    is_cursor_visible = (int(t / blink_duration) % 2) == 0
-                    line = ">>> |" if is_cursor_visible else ">>>  "
 
                 # Draw the text with calculated alpha
                 draw.text(
@@ -290,6 +287,19 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
                     font=font,
                 )
 
+        # Handle cursor blinking at the last position
+        if t >= remaining_duration - line_time:  # Start showing cursor near end of code display
+            blink_duration = 0.4  # Duration of one blink cycle
+            is_cursor_visible = (int(t / blink_duration) % 2) == 0
+            cursor_line = ">>> |" if is_cursor_visible else ">>>  "
+            # Draw cursor at the end
+            draw.text(
+                (50, y_position + (len(code_lines) - 1) * line_spacing),
+                cursor_line,
+                fill=(0, 0, 0, 255),
+                font=font,
+            )
+
         return np.array(img)
 
     # Create the clip
@@ -297,51 +307,6 @@ def code_display_clip_with_highlighting(code_text, duration=4.0, fps=24, segment
     txt_clip = txt_clip.set_fps(fps)
 
     return txt_clip
-
-
-def loading_animation_clip(duration=1.0, fps=24):
-    """Create a terminal-like animation with blinking cursor."""
-    logger.info("Creating cursor animation.")
-
-    # Create a white background clip
-    frame_size = HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE
-
-    def make_frame(t):
-        # Create a white background
-        img = Image.new("RGB", frame_size, color="white")
-        draw = ImageDraw.Draw(img)
-
-        # Try to load Courier font, fallback to Arial if not available
-        try:
-            font = ImageFont.truetype("cour.ttf", FONT_SIZES["cursor"])
-        except OSError:
-            try:
-                font = ImageFont.truetype("arial.ttf", FONT_SIZES["cursor"])
-            except OSError:
-                font = ImageFont.load_default()
-
-        # Calculate cursor visibility based on time
-        blink_duration = 0.4
-        is_cursor_visible = (int(t / blink_duration) % 2) == 0
-
-        # Draw the prompt text with or without cursor
-        text = ">>> |" if is_cursor_visible else ">>>  "
-
-        # Calculate vertical center position
-        text_bbox = draw.textbbox((0, 0), text, font=font)
-        text_height = text_bbox[3] - text_bbox[1]
-        y_position = (frame_size[1] - text_height) // 2
-
-        # Draw the text
-        draw.text((50, y_position), text, font=font, fill="black")
-
-        return np.array(img)
-
-    # Create the clip
-    clip = VideoClip(make_frame, duration=duration)
-    clip = clip.set_fps(fps)
-
-    return clip
 
 
 def smooth_plot_display(image_path, duration=5.0, fps=24):
@@ -353,7 +318,7 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
     w, h = img_pil.size
 
     # Calculate the duration for each phase
-    static_time = duration * 0.35  # Show full plot for 35% of the time
+    static_time = duration * 0.25  # Show full plot for 25% of the time
     pan_time = duration - static_time  # The rest is for panning
 
     # Create a white background frame
@@ -392,16 +357,16 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
             # Second phase: systematic panning across the image
             pan_t = (t - static_time) / pan_time
 
-            # Create a smooth path through the 3x3 grid
+            # Create a smooth path through the 3x3 grid with wider coverage
             grid_positions = [
-                (0.25, 0.25),  # Top-left
-                (0.5, 0.25),  # Top-center
-                (0.75, 0.25),  # Top-right
-                (0.75, 0.5),  # Middle-right
-                (0.75, 0.75),  # Bottom-right
-                (0.5, 0.75),  # Bottom-center
-                (0.25, 0.75),  # Bottom-left
-                (0.25, 0.5),  # Middle-left
+                (0.2, 0.2),  # Top-left (further out)
+                (0.5, 0.2),  # Top-center
+                (0.8, 0.2),  # Top-right (further out)
+                (0.8, 0.5),  # Middle-right
+                (0.8, 0.8),  # Bottom-right (further out)
+                (0.5, 0.8),  # Bottom-center
+                (0.2, 0.8),  # Bottom-left (further out)
+                (0.2, 0.5),  # Middle-left
                 (0.5, 0.5),  # Center
             ]
 
@@ -417,8 +382,8 @@ def smooth_plot_display(image_path, duration=5.0, fps=24):
                 pos2 = grid_positions[(idx + 1) % num_positions]
                 pos = (pos1[0] + t_sub * (pos2[0] - pos1[0]), pos1[1] + t_sub * (pos2[1] - pos1[1]))
 
-            # Calculate the zoom window
-            zoom_factor = 0.4
+            # Calculate the zoom window with slightly larger zoom
+            zoom_factor = 0.45  # Increased from 0.4 for wider view
             x_center = int(w * pos[0])
             y_center = int(h * pos[1])
             slice_w = int(w * zoom_factor)
@@ -601,23 +566,24 @@ if SHORT_VERSION:
 # Create clips for each segment
 clips = []
 
-# Add intro clip (longer duration to allow all three lines to appear)
-intro_clip = create_intro_clip(duration=4.0)
+# Adjust intro duration
+intro_clip = create_intro_clip(duration=2.5)
 clips.append(intro_clip)
 
 # Process each segment
 for plot_type, code_text, image_file, code_duration in segments:
-    logger.info(f"Processing segment {plot_type} with output: {image_file}")
-
-    # Code display with cursor animation
+    # Code display with cursor animation - show cursor for 1 second
     code_clip = code_display_clip_with_highlighting(
-        code_text, duration=code_duration, fps=OUTPUT_FPS, segment_type=plot_type
+        code_text,
+        duration=code_duration + 1.0,  # Add 1 second for cursor
+        fps=OUTPUT_FPS,
+        segment_type=plot_type,
     )
 
-    # Plot display with pan effect
-    plot_clip = smooth_plot_display(image_file, duration=6.0)
+    # Plot display with pan effect - increased duration
+    plot_clip = smooth_plot_display(image_file, duration=7.0)  # Increased from 6.0
 
-    # Short pause between segments (white background)
+    # Short pause between segments
     pause = ColorClip(
         size=HIGH_RES_SIZE if not SHORT_VERSION else LOW_RES_SIZE,
         color=(255, 255, 255),
