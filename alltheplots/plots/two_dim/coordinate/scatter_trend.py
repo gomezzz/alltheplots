@@ -81,22 +81,100 @@ def create_scatter_trend_plot(tensor_np, ax=None):
                         x_sorted, trend_line, "r-", linewidth=2, alpha=0.7, label="Linear Trend"
                     )
             else:
-                # Try LOWESS for larger datasets
+                # For larger datasets, assess data entropy/noise first
                 try:
-                    # Determine fraction based on data density
-                    frac = min(0.5, max(0.1, 20 / len(x)))
-                    trend_lowess = lowess(y, x, frac=frac, return_sorted=False)
-                    ax.plot(
-                        x_sorted,
-                        trend_lowess[sorted_indices],
-                        "r-",
-                        linewidth=2,
-                        alpha=0.7,
-                        label="LOWESS Trend",
-                    )
+                    # Evaluate entropy/noise level of the data
+                    # 1. Calculate residuals from linear fit as baseline
+                    linear_coeffs = np.polyfit(x, y, 1)
+                    linear_pred = np.poly1d(linear_coeffs)(x)
+                    residuals = y - linear_pred
+
+                    # 2. Calculate noise metrics
+                    residual_std = np.std(residuals)
+                    signal_std = np.std(y)
+                    noise_ratio = residual_std / signal_std if signal_std > 0 else 1.0
+
+                    # 3. Check for high noise (random) vs structured pattern
+                    # Calculate autocorrelation of residuals to check for structure
+                    from scipy.signal import correlate
+
+                    res_auto = correlate(
+                        residuals - np.mean(residuals), residuals - np.mean(residuals), mode="full"
+                    )[len(residuals) - 1 :]
+                    res_auto = res_auto / res_auto[0]  # Normalize
+
+                    # High autocorrelation indicates structure in residuals (not just noise)
+                    structured_pattern = np.any(np.abs(res_auto[1:10]) > 0.3)
+
+                    # 4. Choose method based on noise and structure assessment
+                    if noise_ratio > 0.8 and not structured_pattern:
+                        # High noise, little structure - use more aggressive smoothing
+                        logger.debug(
+                            f"High noise data (ratio: {noise_ratio:.2f}), using stronger smoothing"
+                        )
+
+                        if len(x) > 100:
+                            # For larger datasets with high noise, use LOWESS with strong smoothing
+                            # Higher frac means more smoothing
+                            frac = min(0.7, max(0.3, 30 / len(x)))
+                            trend_lowess = lowess(y, x, frac=frac, it=3, return_sorted=False)
+                            ax.plot(
+                                x_sorted,
+                                trend_lowess[sorted_indices],
+                                "r-",
+                                linewidth=2,
+                                alpha=0.7,
+                                label=f"LOWESS (strong, frac={frac:.2f})",
+                            )
+                        else:
+                            # For smaller noisy datasets, polynomial is often better
+                            degree = min(3, max(1, len(x) // 15))
+                            coeffs = np.polyfit(x, y, degree)
+                            poly = np.poly1d(coeffs)
+                            trend_line = poly(x_sorted)
+                            ax.plot(
+                                x_sorted,
+                                trend_line,
+                                "r-",
+                                linewidth=2,
+                                alpha=0.7,
+                                label=f"Polynomial (deg={degree})",
+                            )
+                    elif noise_ratio > 0.5:
+                        # Medium noise - moderate smoothing
+                        logger.debug(f"Medium noise data (ratio: {noise_ratio:.2f})")
+
+                        # Try LOWESS with moderate parameters
+                        frac = min(0.5, max(0.2, 25 / len(x)))
+                        trend_lowess = lowess(y, x, frac=frac, it=2, return_sorted=False)
+                        ax.plot(
+                            x_sorted,
+                            trend_lowess[sorted_indices],
+                            "r-",
+                            linewidth=2,
+                            alpha=0.7,
+                            label=f"LOWESS (frac={frac:.2f})",
+                        )
+                    else:
+                        # Low noise or structured residuals - light smoothing to preserve details
+                        logger.debug(f"Low noise/structured data (ratio: {noise_ratio:.2f})")
+
+                        # Try LOWESS with light smoothing
+                        frac = min(0.3, max(0.1, 15 / len(x)))
+                        trend_lowess = lowess(y, x, frac=frac, it=1, return_sorted=False)
+                        ax.plot(
+                            x_sorted,
+                            trend_lowess[sorted_indices],
+                            "r-",
+                            linewidth=2,
+                            alpha=0.7,
+                            label=f"LOWESS (light, frac={frac:.2f})",
+                        )
                 except Exception as e:
-                    # Fall back to Savitzky-Golay if LOWESS fails
-                    logger.warning(f"LOWESS smoothing failed: {e}. Falling back to SG filter.")
+                    # Fall back to Savitzky-Golay if LOWESS/analysis fails
+                    logger.warning(
+                        f"Advanced trend analysis failed: {e}. Falling back to SG filter."
+                    )
                     try:
                         # Choose window length based on data size (must be odd)
                         window_length = min(51, max(5, len(x) // 10 * 2 + 1))

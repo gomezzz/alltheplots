@@ -27,44 +27,50 @@ def create_scatter_marginal_plot(tensor_np, ax=None, fig=None):
     try:
         # Extract x and y coordinates
         x = tensor_np[:, 0]
-        y = tensor_np[:, 1]
-
-        # Set up axes for marginal distributions
+        y = tensor_np[:, 1]  # Set up axes for marginal distributions
         if in_grid:
             # When in a grid, create the marginal plots within the given axis
             # This is tricky because we need to create "inset" axes
             from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-            # Get the position of the main axis
-            pos = ax.get_position()
-
-            # Create inset axes for marginals
-            # Top marginal (x distribution)
+            # Create inset axes for marginals - make them larger with more padding
+            # Top marginal (x distribution) - increased height from 20% to 30%
             ax_top = inset_axes(
                 ax,
                 width="100%",
-                height="20%",
+                height="30%",  # Increased from 20% to 30%
                 loc="upper center",
-                bbox_to_anchor=(0, 1.1, 1, 0.2),
+                bbox_to_anchor=(0, 1.2, 1, 0.3),  # Increased height and moved up
                 bbox_transform=ax.transAxes,
             )
 
-            # Right marginal (y distribution)
+            # Right marginal (y distribution) - increased width from 20% to 30%
             ax_right = inset_axes(
                 ax,
-                width="20%",
+                width="30%",  # Increased from 20% to 30%
                 height="100%",
                 loc="right",
-                bbox_to_anchor=(1.1, 0, 0.2, 1),
+                bbox_to_anchor=(1.2, 0, 0.3, 1),  # Increased width and moved right
                 bbox_transform=ax.transAxes,
             )
         else:
             # For standalone figure, use gridspec for better layout
             import matplotlib.gridspec as gridspec
 
-            # Create the gridspec
+            # Create the gridspec with improved ratios
             gs = gridspec.GridSpec(
-                2, 2, width_ratios=[4, 1], height_ratios=[1, 4], wspace=0.05, hspace=0.05
+                2,
+                2,
+                width_ratios=[
+                    3,
+                    1,
+                ],  # Changed from [4, 1] to [3, 1] to give more space to y-marginal
+                height_ratios=[
+                    1,
+                    3,
+                ],  # Changed from [1, 4] to [1, 3] to give more space to x-marginal
+                wspace=0.1,  # Increased spacing slightly
+                hspace=0.1,  # Increased spacing slightly
             )
 
             # Create axes

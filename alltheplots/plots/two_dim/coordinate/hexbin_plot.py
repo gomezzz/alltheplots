@@ -23,9 +23,7 @@ def create_hexbin_plot(tensor_np, ax=None):
     try:
         # Extract x and y coordinates
         x = tensor_np[:, 0]
-        y = tensor_np[:, 1]
-
-        # Handle very small datasets
+        y = tensor_np[:, 1]  # Handle very small datasets
         if len(x) < 20:
             # Just show scatter for small datasets
             ax.scatter(x, y, alpha=0.7)
@@ -40,56 +38,106 @@ def create_hexbin_plot(tensor_np, ax=None):
                 bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8),
             )
         else:
-            # Determine optimal hexbin gridsize based on data size
-            # More data points -> finer grid
-            gridsize = int(min(50, max(10, np.sqrt(len(x) / 2))))
+            # Check for valid data (finite values)
+            valid_mask = np.isfinite(x) & np.isfinite(y)
+            if not np.all(valid_mask):
+                logger.warning(f"Found {np.sum(~valid_mask)} non-finite values, removing them")
+                x = x[valid_mask]
+                y = y[valid_mask]
 
-            # Create the hexbin plot
-            # Use log scale for better visualization with clustered data
-            use_log = (
-                len(x) > 100
-                or np.max(np.bincount(np.digitize(x, bins=20) * 100 + np.digitize(y, bins=20))) > 10
-            )
-
-            if use_log:
-                hb = ax.hexbin(
-                    x,
-                    y,
-                    gridsize=gridsize,
-                    cmap="viridis",
-                    bins="log",  # Log scale for color
-                    mincnt=1,  # Minimum count to show a hexagon
+            # Check for constant data (all x or all y values are the same)
+            if len(np.unique(x)) <= 1 or len(np.unique(y)) <= 1:
+                logger.warning("Data has constant values, showing scatter instead")
+                ax.scatter(x, y, alpha=0.7)
+                ax.text(
+                    0.5,
+                    0.95,
+                    "Cannot create hexbin with constant values\nshowing scatter instead",
+                    ha="center",
+                    va="top",
+                    transform=ax.transAxes,
+                    fontsize=9,
+                    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8),
                 )
-                cb_label = "log10(N)"
             else:
-                hb = ax.hexbin(
-                    x,
-                    y,
-                    gridsize=gridsize,
-                    cmap="viridis",
-                    mincnt=1,  # Minimum count to show a hexagon
-                )
-                cb_label = "Count"
+                # Add tiny jitter to prevent binning issues when all points fall exactly on grid lines
+                if len(np.unique(x)) < 10 or len(np.unique(y)) < 10:
+                    jitter_scale_x = (
+                        (np.max(x) - np.min(x)) * 0.001 if np.max(x) != np.min(x) else 0.001
+                    )
+                    jitter_scale_y = (
+                        (np.max(y) - np.min(y)) * 0.001 if np.max(y) != np.min(y) else 0.001
+                    )
+                    x = x + np.random.normal(0, jitter_scale_x, size=len(x))
+                    y = y + np.random.normal(0, jitter_scale_y, size=len(y))
+                    logger.debug("Added small jitter to discrete data for better binning")
 
-            # Add colorbar
-            plt.colorbar(hb, ax=ax, label=cb_label)
+                # Determine optimal hexbin gridsize based on data size and uniqueness
+                # More data points and more unique values -> finer grid
+                unique_points = min(len(np.unique(x)), len(np.unique(y)))
+                gridsize = int(min(50, max(10, min(unique_points, np.sqrt(len(x) / 2)))))
 
-            # Add count statistics
-            total_count = len(x)
-            max_count = np.max(hb.get_array())
-            stats_text = f"Total: {total_count}\nGridsize: {gridsize}"
-            if not use_log:
-                stats_text += f"\nMax bin: {max_count}"
+                try:
+                    # First try to determine if we should use log scale
+                    # Use simpler method to avoid issues with digitize
+                    density_ratio = len(x) / (len(np.unique(x)) * len(np.unique(y)))
+                    use_log = density_ratio > 3 or len(x) > 200
 
-            ax.text(
-                0.02,
-                0.98,
-                stats_text,
-                transform=ax.transAxes,
-                fontsize=8,
-                va="top",
-                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8),
-            )
+                    # Create the hexbin plot
+                    if use_log:
+                        hb = ax.hexbin(
+                            x,
+                            y,
+                            gridsize=gridsize,
+                            cmap="viridis",
+                            bins="log",  # Log scale for color
+                            mincnt=1,  # Minimum count to show a hexagon
+                        )
+                        cb_label = "log10(N)"
+                    else:
+                        hb = ax.hexbin(
+                            x,
+                            y,
+                            gridsize=gridsize,
+                            cmap="viridis",
+                            mincnt=1,  # Minimum count to show a hexagon
+                        )
+                        cb_label = "Count"
+
+                    # Add colorbar
+                    plt.colorbar(hb, ax=ax, label=cb_label)
+
+                    # Add count statistics
+                    total_count = len(x)
+                    max_count = np.max(hb.get_array()) if len(hb.get_array()) > 0 else 0
+                    stats_text = f"Total: {total_count}\nGridsize: {gridsize}"
+                    if not use_log and max_count > 0:
+                        stats_text += f"\nMax bin: {max_count}"
+
+                    ax.text(
+                        0.02,
+                        0.98,
+                        stats_text,
+                        transform=ax.transAxes,
+                        fontsize=8,
+                        va="top",
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8),
+                    )
+
+                except Exception as e:
+                    # Fall back to scatter plot if hexbin fails
+                    logger.warning(f"Hexbin failed: {e}, falling back to scatter plot")
+                    ax.scatter(x, y, alpha=0.6, s=min(20, 500 / len(x)))
+                    ax.text(
+                        0.5,
+                        0.95,
+                        f"Hexbin plot failed: {str(e)}\nshowing scatter instead",
+                        ha="center",
+                        va="top",
+                        transform=ax.transAxes,
+                        fontsize=9,
+                        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8),
+                    )
 
         # Set plot title and labels
         ax.set_title("Hexagonal Bin Density Plot")
