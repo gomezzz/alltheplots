@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from ....utils.logger import logger
 
 
@@ -33,7 +32,7 @@ def create_scatter_3d_plot(tensor_np, ax=None):
         marker_size = max(5, min(50, 1000 / n_points))
 
         # Create a scatter plot with transparent markers
-        scatter = ax.scatter(
+        _ = ax.scatter(
             x,
             y,
             z,

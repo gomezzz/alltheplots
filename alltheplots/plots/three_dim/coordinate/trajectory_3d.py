@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from ....utils.logger import logger
 
 
@@ -57,7 +56,6 @@ def create_trajectory_3d_plot(tensor_np, ax=None, connect_points=True):
             # to indicate direction
             if is_likely_trajectory and connect_points:
                 # Plot colored line segments with gradient to show direction
-                from matplotlib.colors import LinearSegmentedColormap
 
                 # Create a custom colormap for the trajectory
                 n_segments = n_points - 1
@@ -76,8 +74,6 @@ def create_trajectory_3d_plot(tensor_np, ax=None, connect_points=True):
                     )
 
                 # Add a colorbar to indicate direction
-                import matplotlib.cm as cm
-                import matplotlib.colors as mcolors
 
                 sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, n_segments))
                 sm.set_array([])
@@ -122,7 +118,7 @@ def create_trajectory_3d_plot(tensor_np, ax=None, connect_points=True):
                 )
             else:
                 # If it doesn't look like a trajectory, show a scatter plot with line connecting
-                scatter = ax.scatter(
+                _ = ax.scatter(
                     x,
                     y,
                     z,
@@ -138,9 +134,7 @@ def create_trajectory_3d_plot(tensor_np, ax=None, connect_points=True):
                     ax.plot(x, y, z, color="gray", linestyle="-", linewidth=1, alpha=0.5)
         else:
             # For very few points, just do a basic scatter with lines
-            scatter = ax.scatter(
-                x, y, z, s=30, c="dodgerblue", alpha=0.7, edgecolors="k", linewidth=0.3
-            )
+            _ = ax.scatter(x, y, z, s=30, c="dodgerblue", alpha=0.7, edgecolors="k", linewidth=0.3)
 
             if connect_points and n_points > 1:
                 ax.plot(x, y, z, color="gray", linestyle="-", linewidth=1, alpha=0.5)

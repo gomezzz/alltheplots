@@ -5,16 +5,6 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from ....utils.logger import logger
 
 
-def _safe_marker_size(n_points, min_size=5, max_size=30, scale_factor=500):
-    """Helper function to calculate a safe marker size based on number of points"""
-    # Ensure n_points is at least 1 to avoid division by zero
-    safe_n = max(1, n_points)
-    # Calculate and bound the marker size
-    size = max(min_size, min(max_size, scale_factor / safe_n))
-    logger.debug(f"delaunay_mesh: _safe_marker_size calculated size {size} for {n_points} points")
-    return size
-
-
 def create_delaunay_mesh_plot(tensor_np, ax=None):
     """
     Create a 3D Delaunay tetrahedral mesh visualization for Nx3 data.
@@ -56,7 +46,6 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
                 fontsize=10,
             )
             if n_points > 0:
-                marker_size = _safe_marker_size(n_points)
                 # Removed s=marker_size
                 ax.scatter(points[:, 0], points[:, 1], points[:, 2], alpha=0.8, c="blue")
             ax.set_title("Delaunay Mesh (Insufficient Data)")
@@ -83,23 +72,18 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
                     transform=ax.transAxes,
                     fontsize=10,
                 )  # Still plot the points
-                marker_size = _safe_marker_size(n_points)
                 ax.scatter(
                     x=points[:, 0],
                     y=points[:, 1],
                     z=points[:, 2],
-                    s=marker_size,
                     alpha=0.8,
                     c="blue",
                 )
                 ax.set_title("Delaunay Mesh (Coplanar Data)")
                 return ax  # Create a scatter plot of the points
         # Use the helper function for safe marker size calculation
-        marker_size = _safe_marker_size(n_points)
-        logger.debug(f"delaunay_mesh: Creating scatter plot with marker_size={marker_size}")
 
-        # Removed s=marker_size in primary scatter call
-        scatter = ax.scatter(
+        _ = ax.scatter(
             points[:, 0],
             points[:, 1],
             points[:, 2],
