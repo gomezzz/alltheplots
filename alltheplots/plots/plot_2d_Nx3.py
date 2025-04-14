@@ -90,10 +90,9 @@ def plot_2d_Nx3(tensor, filename=None, dpi=100, show=True):
         create_cluster_3d_plot(tensor_np, ax=axes[2][2])
 
         # Add column headers
-        # For 3D axes (columns 0 and 2), use text() with a z coordinate of 0.
-        axes[0][0].text(
+        # For 3D axes (columns 0 and 2), use text2D() method
+        axes[0][0].text2D(
             0.5,
-            0,
             1.25,
             "Direct 3D Visualizations",
             ha="center",
@@ -113,9 +112,8 @@ def plot_2d_Nx3(tensor, filename=None, dpi=100, show=True):
             fontsize=11,
             fontweight="bold",
         )
-        axes[0][2].text(
+        axes[0][2].text2D(
             0.5,
-            0,
             1.25,
             "Structural and Advanced Analyses",
             ha="center",
