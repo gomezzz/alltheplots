@@ -83,7 +83,7 @@ def create_scatter_marginal_plot(tensor_np, ax=None, fig=None):
             plt.setp(ax_right.get_yticklabels(), visible=False)
 
         # Create scatter plot
-        scatter = ax.scatter(
+        _ = ax.scatter(
             x, y, alpha=0.6, s=min(50, max(10, 500 / len(x))), edgecolor="k", linewidth=0.5
         )
 

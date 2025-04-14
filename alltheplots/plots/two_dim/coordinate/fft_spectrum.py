@@ -84,7 +84,7 @@ def create_fft_spectrum_plot(tensor_np, ax=None):
                 y_windowed = y_for_fft * window
 
                 # Calculate sampling rate from x interval
-                fs = 1.0 / x_interval
+                _ = 1.0 / x_interval
 
                 # Compute FFT with zero padding for better frequency resolution
                 n_fft = max(

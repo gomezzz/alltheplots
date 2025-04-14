@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger

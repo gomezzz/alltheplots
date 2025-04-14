@@ -78,7 +78,7 @@ def create_convex_hull_plot(tensor_np, ax=None):
                     raise ValueError("Collinear points detected")
 
             # Create scatter plot
-            scatter = ax.scatter(
+            _ = ax.scatter(
                 points[:, 0],
                 points[:, 1],
                 alpha=0.7,
@@ -156,7 +156,7 @@ def create_convex_hull_plot(tensor_np, ax=None):
         if len(points) >= 3:
             try:
                 ax.scatter(points[:, 0], points[:, 1], alpha=0.7)
-            except:
+            except Exception:
                 pass
 
         ax.text(

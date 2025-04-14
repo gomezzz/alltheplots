@@ -56,7 +56,7 @@ def create_delaunay_voronoi_plot(tensor_np, ax=None, method="delaunay"):
                 logger.debug(f"Auto-selected {method} based on data size")
 
             # Generate scatter plot of points
-            scatter = ax.scatter(
+            _ = ax.scatter(
                 points[:, 0],
                 points[:, 1],
                 alpha=0.7,
