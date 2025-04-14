@@ -5,6 +5,14 @@ from sklearn.preprocessing import StandardScaler
 from ....utils.logger import logger
 
 
+def _safe_marker_size(n_points, min_size=5, max_size=30, scale_factor=500):
+    """Helper function to calculate a safe marker size based on number of points"""
+    # Ensure n_points is at least 1 to avoid division by zero
+    safe_n = max(1, n_points)
+    # Calculate and bound the marker size
+    return max(min_size, min(max_size, scale_factor / safe_n))
+
+
 def create_cluster_3d_plot(tensor_np, ax=None):
     """
     Create a 3D scatter plot with DBSCAN clustering for Nx3 data.
@@ -36,10 +44,13 @@ def create_cluster_3d_plot(tensor_np, ax=None):
                 va="center",
                 transform=ax.transAxes,
                 fontsize=10,
-            )
-            # Still plot the points
+            )  # Still plot the points
             if n_points > 0:
-                ax.scatter(points[:, 0], points[:, 1], points[:, 2], s=30, alpha=0.8, c="blue")
+                # Use the helper function for safe marker size calculation
+                marker_size = _safe_marker_size(n_points)
+                ax.scatter(
+                    points[:, 0], points[:, 1], points[:, 2], s=marker_size, alpha=0.8, c="blue"
+                )
             ax.set_title("Clustering (Insufficient Data)")
             return ax
 
@@ -95,14 +106,14 @@ def create_cluster_3d_plot(tensor_np, ax=None):
                 else:
                     # Colormap for cluster points
                     rgba = cmap(clusters[i] % cmap.N)
-                    colors.append(rgba)
-
-            # Scatter plot with clusters
+                    colors.append(rgba)  # Scatter plot with clusters
+            # Ensure marker size is positive and reasonable
+            marker_size = max(5, min(30, 500 / max(1, n_points)))
             _ = ax.scatter(
                 points[:, 0],
                 points[:, 1],
                 points[:, 2],
-                s=max(5, min(30, 500 / n_points)),
+                s=marker_size,
                 c=colors,
                 alpha=0.8,
                 edgecolors="k",
@@ -187,11 +198,13 @@ def create_cluster_3d_plot(tensor_np, ax=None):
             logger.warning(f"DBSCAN clustering failed: {e}. Showing unclustered points.")
 
             # Just show the unclustered points
+            # Use the helper function for safe marker size calculation
+            marker_size = _safe_marker_size(n_points)
             ax.scatter(
                 points[:, 0],
                 points[:, 1],
                 points[:, 2],
-                s=max(5, min(30, 500 / n_points)),
+                s=marker_size,
                 alpha=0.7,
                 c="blue",
                 edgecolors="k",
