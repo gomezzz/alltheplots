@@ -2,6 +2,8 @@ from .plots_1d import plot_1d
 from .plots_2d import plot_2d
 from .plots_3d import plot_3d
 from .plots_nd import plot_nd
+from .plot_2d_Nx2 import plot_2d_Nx2
+from .plot_2d_Nx3 import plot_2d_Nx3
 from ..utils.type_handling import to_numpy
 from ..utils.logger import logger
 
@@ -47,8 +49,25 @@ def plot(tensor, filename=None, dpi=100, show=True):
         logger.info("Detected 1D tensor, routing to plot_1d")
         return plot_1d(tensor_np, filename=filename, dpi=dpi, show=show)
     elif len(effective_dims) == 2:  # Handle 2D case
-        logger.info("Detected 2D tensor, routing to plot_2d")
-        return plot_2d(tensor_np, filename=filename, dpi=dpi, show=show)
+        # Special case for Nx2 or 2xN tensors
+        if (tensor_np.shape[0] == 2 or tensor_np.shape[1] == 2) and len(tensor_np.shape) == 2:
+            logger.info(f"Detected {tensor_np.shape} tensor, routing to specialized Nx2 plots")
+            # Ensure Nx2 format (transpose if needed)
+            if tensor_np.shape[0] == 2:
+                tensor_np = tensor_np.T
+                logger.debug("Transposed 2xN tensor to Nx2 format")
+            return plot_2d_Nx2(tensor_np, filename=filename, dpi=dpi, show=show)
+        # Special case for Nx3 or 3xN tensors
+        elif (tensor_np.shape[0] == 3 or tensor_np.shape[1] == 3) and len(tensor_np.shape) == 2:
+            logger.info(f"Detected {tensor_np.shape} tensor, routing to specialized Nx3 plots")
+            # Ensure Nx3 format (transpose if needed)
+            if tensor_np.shape[0] == 3:
+                tensor_np = tensor_np.T
+                logger.debug("Transposed 3xN tensor to Nx3 format")
+            return plot_2d_Nx3(tensor_np, filename=filename, dpi=dpi, show=show)
+        else:
+            logger.info("Detected 2D tensor, routing to plot_2d")
+            return plot_2d(tensor_np, filename=filename, dpi=dpi, show=show)
     elif len(effective_dims) == 3:  # Handle 3D case
         logger.info("Detected 3D tensor, routing to plot_3d")
         return plot_3d(tensor_np, filename=filename, dpi=dpi, show=show)

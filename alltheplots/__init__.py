@@ -6,7 +6,7 @@ from .plots import plot
 from .utils.logger import set_log_level
 
 
-ATP_RELEASE_TOGGLE = True
+ATP_RELEASE_TOGGLE = False
 
 if ATP_RELEASE_TOGGLE:
     # Disable alltheplots logger
