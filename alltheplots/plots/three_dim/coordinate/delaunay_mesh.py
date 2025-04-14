@@ -10,7 +10,9 @@ def _safe_marker_size(n_points, min_size=5, max_size=30, scale_factor=500):
     # Ensure n_points is at least 1 to avoid division by zero
     safe_n = max(1, n_points)
     # Calculate and bound the marker size
-    return max(min_size, min(max_size, scale_factor / safe_n))
+    size = max(min_size, min(max_size, scale_factor / safe_n))
+    logger.debug(f"delaunay_mesh: _safe_marker_size calculated size {size} for {n_points} points")
+    return size
 
 
 def create_delaunay_mesh_plot(tensor_np, ax=None):
@@ -30,6 +32,11 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
     if ax is None:
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="3d")
+    # Ensure ax is a 3D axes (should have add_collection3d)
+    if ax is None or not hasattr(ax, "add_collection3d"):
+        raise ValueError(
+            "A 3D Axes (with projection='3d') is required for create_delaunay_mesh_plot"
+        )
 
     try:
         # Extract x, y, and z coordinates
@@ -41,18 +48,17 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
             ax.text(
                 0.5,
                 0.5,
+                0,
                 "Insufficient data for Delaunay mesh\n(need at least 4 points)",
                 ha="center",
                 va="center",
                 transform=ax.transAxes,
                 fontsize=10,
-            )  # Still plot the points
+            )
             if n_points > 0:
-                # Use consistent marker size
                 marker_size = _safe_marker_size(n_points)
-                ax.scatter(
-                    points[:, 0], points[:, 1], points[:, 2], s=marker_size, alpha=0.8, c="blue"
-                )
+                # Removed s=marker_size
+                ax.scatter(points[:, 0], points[:, 1], points[:, 2], alpha=0.8, c="blue")
             ax.set_title("Delaunay Mesh (Insufficient Data)")
             return ax
 
@@ -70,33 +76,37 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
                 ax.text(
                     0.5,
                     0.5,
+                    0,
                     "Coplanar points detected\nCannot compute 3D Delaunay",
                     ha="center",
                     va="center",
                     transform=ax.transAxes,
                     fontsize=10,
                 )  # Still plot the points
-                # Use consistent marker size
                 marker_size = _safe_marker_size(n_points)
                 ax.scatter(
-                    points[:, 0], points[:, 1], points[:, 2], s=marker_size, alpha=0.8, c="blue"
+                    x=points[:, 0],
+                    y=points[:, 1],
+                    z=points[:, 2],
+                    s=marker_size,
+                    alpha=0.8,
+                    c="blue",
                 )
                 ax.set_title("Delaunay Mesh (Coplanar Data)")
-                return ax
-
-        # For larger datasets, coplanarity is less of a concern
-        # But we'll add a small amount of jitter if needed        # Create a scatter plot of the points
+                return ax  # Create a scatter plot of the points
         # Use the helper function for safe marker size calculation
         marker_size = _safe_marker_size(n_points)
-        ax.scatter(
+        logger.debug(f"delaunay_mesh: Creating scatter plot with marker_size={marker_size}")
+
+        # Removed s=marker_size in primary scatter call
+        scatter = ax.scatter(
             points[:, 0],
             points[:, 1],
             points[:, 2],
-            s=marker_size,
             alpha=0.6,
             c="blue",
             edgecolors="k",
-            linewidth=0.3,
+            linewidths=0.3,
         )
 
         # Compute 3D Delaunay triangulation
@@ -183,6 +193,7 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
             ax.text(
                 0.02,
                 0.98,
+                0,
                 stats_text,
                 transform=ax.transAxes,
                 fontsize=8,
@@ -192,9 +203,10 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
 
         except Exception as e:
             logger.warning(f"Delaunay computation failed: {e}. Showing points only.")
-            ax.text2D(
+            ax.text(
                 0.5,
                 0.5,
+                0,
                 f"Delaunay computation failed:\n{str(e)}",
                 ha="center",
                 va="center",
@@ -235,6 +247,7 @@ def create_delaunay_mesh_plot(tensor_np, ax=None):
         ax.text(
             0.5,
             0.5,
+            0,
             f"Delaunay Mesh Error: {str(e)}",
             ha="center",
             va="center",

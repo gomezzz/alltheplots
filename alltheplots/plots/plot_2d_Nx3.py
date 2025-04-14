@@ -65,10 +65,9 @@ def plot_2d_Nx3(tensor, filename=None, dpi=100, show=True):
     for i in range(3):
         row = []
         for j in range(3):
-            # Create 3D axes for the first column (direct 3D visualizations)
-            if j == 0:
+            # Create 3D axes for columns 0 and 2; use 2D axes for column 1
+            if j == 0 or j == 2:
                 ax = fig.add_subplot(gs[i, j], projection="3d")
-            # Create 2D axes for columns 2 and 3
             else:
                 ax = fig.add_subplot(gs[i, j])
             row.append(ax)
@@ -91,8 +90,10 @@ def plot_2d_Nx3(tensor, filename=None, dpi=100, show=True):
         create_cluster_3d_plot(tensor_np, ax=axes[2][2])
 
         # Add column headers
-        axes[0][0].text2D(
+        # For 3D axes (columns 0 and 2), use text() with a z coordinate of 0.
+        axes[0][0].text(
             0.5,
+            0,
             1.25,
             "Direct 3D Visualizations",
             ha="center",
@@ -101,6 +102,7 @@ def plot_2d_Nx3(tensor, filename=None, dpi=100, show=True):
             fontsize=11,
             fontweight="bold",
         )
+        # Column 2 (2D axes) can use regular text call:
         axes[0][1].text(
             0.5,
             1.25,
@@ -113,6 +115,7 @@ def plot_2d_Nx3(tensor, filename=None, dpi=100, show=True):
         )
         axes[0][2].text(
             0.5,
+            0,
             1.25,
             "Structural and Advanced Analyses",
             ha="center",

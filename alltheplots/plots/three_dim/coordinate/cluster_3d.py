@@ -10,20 +10,16 @@ def _safe_marker_size(n_points, min_size=5, max_size=30, scale_factor=500):
     # Ensure n_points is at least 1 to avoid division by zero
     safe_n = max(1, n_points)
     # Calculate and bound the marker size
-    return max(min_size, min(max_size, scale_factor / safe_n))
+    size = max(min_size, min(max_size, scale_factor / safe_n))
+    logger.debug(f"cluster_3d: _safe_marker_size calculated size {size} for {n_points} points")
+    return size
 
 
 def create_cluster_3d_plot(tensor_np, ax=None):
-    """
-    Create a 3D scatter plot with DBSCAN clustering for Nx3 data.
+    # Ensure ax is a 3D axes (has set_zlabel)
+    if ax is None or not hasattr(ax, "set_zlabel"):
+        raise ValueError("A 3D Axes (with projection='3d') is required for create_cluster_3d_plot")
 
-    Parameters:
-        tensor_np (numpy.ndarray): The Nx3 numpy array to visualize
-        ax (matplotlib.axes.Axes, optional): The matplotlib axis to plot on. If None, a new one is created.
-
-    Returns:
-        matplotlib.axes.Axes: The axis with the plot
-    """
     logger.debug("Creating 3D cluster plot")
 
     # Create ax if not provided
@@ -44,13 +40,11 @@ def create_cluster_3d_plot(tensor_np, ax=None):
                 va="center",
                 transform=ax.transAxes,
                 fontsize=10,
-            )  # Still plot the points
+            )
             if n_points > 0:
-                # Use the helper function for safe marker size calculation
                 marker_size = _safe_marker_size(n_points)
-                ax.scatter(
-                    points[:, 0], points[:, 1], points[:, 2], s=marker_size, alpha=0.8, c="blue"
-                )
+                # Removed s=marker_size; let the default be used
+                ax.scatter(points[:, 0], points[:, 1], points[:, 2], alpha=0.8, c="blue")
             ax.set_title("Clustering (Insufficient Data)")
             return ax
 
@@ -106,18 +100,19 @@ def create_cluster_3d_plot(tensor_np, ax=None):
                 else:
                     # Colormap for cluster points
                     rgba = cmap(clusters[i] % cmap.N)
-                    colors.append(rgba)  # Scatter plot with clusters
-            # Ensure marker size is positive and reasonable
-            marker_size = max(5, min(30, 500 / max(1, n_points)))
+                    colors.append(
+                        rgba
+                    )  # Scatter plot with clusters            # Use safe marker size instead of hardcoded calculation
+            marker_size = _safe_marker_size(n_points)
+            # Removed s=marker_size here as well
             _ = ax.scatter(
                 points[:, 0],
                 points[:, 1],
                 points[:, 2],
-                s=marker_size,
                 c=colors,
                 alpha=0.8,
                 edgecolors="k",
-                linewidth=0.3,
+                linewidths=0.3,
             )
 
             # Add stats text
@@ -130,6 +125,7 @@ def create_cluster_3d_plot(tensor_np, ax=None):
             ax.text(
                 0.02,
                 0.98,
+                0,
                 stats_text,
                 transform=ax.transAxes,
                 fontsize=8,
@@ -195,25 +191,25 @@ def create_cluster_3d_plot(tensor_np, ax=None):
                 )
 
         except Exception as e:
-            logger.warning(f"DBSCAN clustering failed: {e}. Showing unclustered points.")
-
-            # Just show the unclustered points
-            # Use the helper function for safe marker size calculation
+            logger.warning(
+                f"DBSCAN clustering failed: {e}. Showing unclustered points."
+            )  # Just show the unclustered points
             marker_size = _safe_marker_size(n_points)
-            ax.scatter(
+            # Updated fallback scatter call with linewidths
+            scatter_fallback = ax.scatter(
                 points[:, 0],
                 points[:, 1],
                 points[:, 2],
-                s=marker_size,
                 alpha=0.7,
                 c="blue",
                 edgecolors="k",
-                linewidth=0.3,
+                linewidths=0.3,
             )
 
             ax.text(
                 0.5,
                 0.5,
+                0,
                 f"Clustering failed: {str(e)}",
                 ha="center",
                 va="center",
@@ -247,18 +243,14 @@ def create_cluster_3d_plot(tensor_np, ax=None):
         ax.set_xlim(mid_x - max_range, mid_x + max_range)
         ax.set_ylim(mid_y - max_range, mid_y + max_range)
         ax.set_zlim(mid_z - max_range, mid_z + max_range)
-
     except Exception as e:
         logger.error(f"Failed to create cluster plot: {e}")
-        # Make sure points are still shown even if clustering fails
-        try:
-            ax.scatter(points[:, 0], points[:, 1], points[:, 2], alpha=0.7)
-        except Exception:
-            pass
+        # Don't try to show points again - this was causing the parameter conflict
 
         ax.text(
             0.5,
             0.5,
+            0,
             f"Cluster Plot Error: {str(e)}",
             ha="center",
             va="center",
