@@ -101,13 +101,19 @@ def create_scatter_marginal_plot(tensor_np, ax=None, fig=None):
         use_kde = len(x) > 100 and len(np.unique(x)) > 20 and len(np.unique(y)) > 20
 
         if use_kde:
-            try:
-                # Try to import seaborn for KDE
+            try:  # Try to import seaborn for KDE
                 import seaborn as sns
 
                 # Create KDE plots
                 sns.kdeplot(x=x, ax=ax_top, color="blue", fill=True, alpha=0.5)
-                sns.kdeplot(y=y, ax=ax_right, color="blue", fill=True, alpha=0.5, vertical=True)
+
+                # Fix for the deprecation warning - use y parameter instead of vertical=True
+                # Also rotate the Y axis so it aligns better with the main scatter plot
+                sns.kdeplot(y=y, ax=ax_right, color="blue", fill=True, alpha=0.5)
+
+                # Properly orient the Y axis ticks and labels
+                ax_right.tick_params(axis="y", labelleft=False, labelright=True)
+                ax_right.yaxis.set_label_position("right")
 
                 logger.debug("Using KDE for marginal distributions")
             except Exception as e:
@@ -117,9 +123,7 @@ def create_scatter_marginal_plot(tensor_np, ax=None, fig=None):
         if not use_kde:
             # Use histograms
             bins_x = freedman_diaconis_bins(x)
-            bins_y = freedman_diaconis_bins(y)
-
-            # Create histograms
+            bins_y = freedman_diaconis_bins(y)  # Create histograms
             ax_top.hist(x, bins=bins_x, alpha=0.7, color="blue", edgecolor="k", linewidth=0.5)
             ax_right.hist(
                 y,
@@ -130,6 +134,10 @@ def create_scatter_marginal_plot(tensor_np, ax=None, fig=None):
                 edgecolor="k",
                 linewidth=0.5,
             )
+
+            # Properly orient the Y axis ticks and labels for better readability
+            ax_right.tick_params(axis="y", labelleft=False, labelright=True)
+            ax_right.yaxis.set_label_position("right")
 
             logger.debug(f"Using histograms with {bins_x} and {bins_y} bins for marginals")
 
